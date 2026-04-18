@@ -98,14 +98,14 @@ main() {
   cp -a "${CURRENT_RELEASE_DIR}/web/dist" "${WEB_DIR}/dist"
 
   log "重启 member-api"
-  systemctl restart member-api
-  systemctl is-active --quiet member-api
+  sudo systemctl restart member-api
+  sudo systemctl is-active --quiet member-api
 
   log "检查 Nginx 配置"
   nginx -t
 
   log "重新加载 Nginx"
-  systemctl reload nginx
+  sudo systemctl reload nginx
 
   log "部署完成"
   log "备份目录: ${CURRENT_BACKUP_DIR}"
