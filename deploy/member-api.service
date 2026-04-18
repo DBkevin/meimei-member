@@ -1,0 +1,14 @@
+[Unit]
+Description=Meimei Member API
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/meimei-member/server
+ExecStart=/opt/meimei-member/server/member-api
+EnvironmentFile=/opt/meimei-member/server/.env
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
