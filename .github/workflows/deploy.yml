@@ -6,7 +6,7 @@ on:
       - main
 
 concurrency:
-  group: deploy-production
+  group: meimei-member-production
   cancel-in-progress: true
 
 env:
@@ -36,17 +36,20 @@ jobs:
       - name: Build server/member-api
         working-directory: ./server
         run: |
+          set -euo pipefail
           go mod download
           CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -ldflags="-s -w" -o member-api .
 
       - name: Build web/dist
         working-directory: ./web
         run: |
+          set -euo pipefail
           npm install
           npm run build
 
       - name: Package release.tar.gz
         run: |
+          set -euo pipefail
           rm -rf release
           mkdir -p release/server release/web
           cp server/member-api release/server/member-api
@@ -59,6 +62,9 @@ jobs:
           DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
           DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
         run: |
+          set -euo pipefail
+          : "${DEPLOY_HOST:?DEPLOY_HOST is required}"
+          : "${DEPLOY_SSH_KEY:?DEPLOY_SSH_KEY is required}"
           install -m 700 -d ~/.ssh
           printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
@@ -70,9 +76,15 @@ jobs:
           DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
         run: |
-          ssh -p "${DEPLOY_PORT:-22}" "${DEPLOY_USER}@${DEPLOY_HOST}" "mkdir -p '${APP_ROOT}/deploy' '${APP_ROOT}/server' '${APP_ROOT}/web'"
-          scp -P "${DEPLOY_PORT:-22}" release.tar.gz "${DEPLOY_USER}@${DEPLOY_HOST}:${APP_ROOT}/release.tar.gz"
-          scp -P "${DEPLOY_PORT:-22}" deploy/deploy.sh deploy/member-api.service deploy/nginx.conf.example "${DEPLOY_USER}@${DEPLOY_HOST}:${APP_ROOT}/deploy/"
+          set -euo pipefail
+          : "${DEPLOY_HOST:?DEPLOY_HOST is required}"
+          : "${DEPLOY_USER:?DEPLOY_USER is required}"
+          ssh -p "${DEPLOY_PORT:-22}" "${DEPLOY_USER}@${DEPLOY_HOST}" \
+            "mkdir -p '${APP_ROOT}/deploy' '${APP_ROOT}/server' '${APP_ROOT}/web' '${APP_ROOT}/backups' '${APP_ROOT}/releases'"
+          scp -P "${DEPLOY_PORT:-22}" release.tar.gz \
+            "${DEPLOY_USER}@${DEPLOY_HOST}:${APP_ROOT}/release.tar.gz"
+          scp -P "${DEPLOY_PORT:-22}" deploy/deploy.sh deploy/member-api.service deploy/nginx.conf.example \
+            "${DEPLOY_USER}@${DEPLOY_HOST}:${APP_ROOT}/deploy/"
 
       - name: Run remote deploy script
         env:
@@ -80,4 +92,8 @@ jobs:
           DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
         run: |
-          ssh -p "${DEPLOY_PORT:-22}" "${DEPLOY_USER}@${DEPLOY_HOST}" "chmod +x '${APP_ROOT}/deploy/deploy.sh' && '${APP_ROOT}/deploy/deploy.sh'"
+          set -euo pipefail
+          : "${DEPLOY_HOST:?DEPLOY_HOST is required}"
+          : "${DEPLOY_USER:?DEPLOY_USER is required}"
+          ssh -p "${DEPLOY_PORT:-22}" "${DEPLOY_USER}@${DEPLOY_HOST}" \
+            "chmod +x '${APP_ROOT}/deploy/deploy.sh' && '${APP_ROOT}/deploy/deploy.sh' '${APP_ROOT}/release.tar.gz'"
