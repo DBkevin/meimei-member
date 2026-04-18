@@ -12,18 +12,37 @@ import (
 type PointAccountService struct{}
 
 func (s *PointAccountService) GetPointAccountByMemberID(memberID uint) (account memberModel.PointAccount, err error) {
-	member, err := loadMember(bizDB(), memberID)
-	if err != nil {
-		return account, err
-	}
-	err = bizDB().Where("member_id = ?", memberID).First(&account).Error
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return s.buildDefaultAccount(member), nil
-	}
-	if err != nil {
-		return account, err
-	}
-	account.Member = member
+	err = bizDB().Transaction(func(tx *gorm.DB) error {
+		member, loadErr := loadMember(tx, memberID)
+		if loadErr != nil {
+			return loadErr
+		}
+
+		queryErr := tx.Where("member_id = ?", memberID).First(&account).Error
+		if queryErr == nil {
+			account.Member = member
+			return nil
+		}
+		if !errors.Is(queryErr, gorm.ErrRecordNotFound) {
+			return queryErr
+		}
+
+		createErr := tx.Create(&memberModel.PointAccount{MemberID: memberID}).Error
+		if createErr != nil {
+			retryErr := tx.Where("member_id = ?", memberID).First(&account).Error
+			if retryErr == nil {
+				account.Member = member
+				return nil
+			}
+			return createErr
+		}
+
+		if queryErr = tx.Where("member_id = ?", memberID).First(&account).Error; queryErr != nil {
+			return queryErr
+		}
+		account.Member = member
+		return nil
+	})
 	return account, nil
 }
 

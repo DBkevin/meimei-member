@@ -15,7 +15,7 @@ type SearchApiParams struct {
 
 // SetApiAuthorities 通过API路径和方法全量覆盖关联角色列表
 type SetApiAuthorities struct {
-	Path         string `json:"path" form:"path"`                     // API路径
-	Method       string `json:"method" form:"method"`                 // 请求方法
-	AuthorityIds []uint `json:"authorityIds" form:"authorityIds"`     // 角色ID列表
+	Path         string `json:"path" form:"path"`                 // API路径
+	Method       string `json:"method" form:"method"`             // 请求方法
+	AuthorityIds []uint `json:"authorityIds" form:"authorityIds"` // 角色ID列表
 }

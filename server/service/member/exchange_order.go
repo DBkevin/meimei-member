@@ -68,12 +68,12 @@ func (s *ExchangeOrderService) CreateExchangeOrder(req memberReq.CreateExchangeO
 		}
 
 		result := tx.Model(&memberModel.PointGoods{}).
-			Where("id = ? AND stock > 0", goods.ID).
-			UpdateColumn("stock", gorm.Expr("stock - ?", 1))
+			Where("id = ? AND stock >= ?", goods.ID, int64(1)).
+			UpdateColumn("stock", gorm.Expr("stock - ?", int64(1)))
 		if result.Error != nil {
 			return result.Error
 		}
-		if result.RowsAffected == 0 {
+		if result.RowsAffected != 1 {
 			return errors.New("商品库存不足")
 		}
 		return nil
