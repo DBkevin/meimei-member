@@ -8,6 +8,10 @@ SERVER_DIR="${APP_ROOT}/server"
 WEB_DIR="${APP_ROOT}/web"
 BACKUP_ROOT="${APP_ROOT}/backups"
 RELEASE_ROOT="${APP_ROOT}/releases"
+ENV_FILE="${SERVER_DIR}/.env"
+CONFIG_FILE="${SERVER_DIR}/config.yaml"
+SYSTEMD_SERVICE_FILE="/etc/systemd/system/member-api.service"
+NGINX_CONF_FILE="/etc/nginx/conf.d/meimei-member.conf"
 TIMESTAMP="$(date +%Y%m%d%H%M%S)"
 CURRENT_RELEASE_DIR="${RELEASE_ROOT}/${TIMESTAMP}"
 CURRENT_BACKUP_DIR="${BACKUP_ROOT}/${TIMESTAMP}"
@@ -57,6 +61,24 @@ main() {
     exit 1
   fi
 
+  if [[ ! -f "${ENV_FILE}" ]]; then
+    log "缺少运行时环境文件: ${ENV_FILE}"
+    log "请先参考 server/.env.example 手动创建 ${ENV_FILE}"
+    exit 1
+  fi
+
+  if [[ ! -f "${CONFIG_FILE}" ]]; then
+    log "缺少生产配置文件: ${CONFIG_FILE}"
+    log "请先参考 server/config.prod.example.yaml 手动创建 ${CONFIG_FILE}，并完成数据库配置"
+    exit 1
+  fi
+
+  if [[ ! -f "${SYSTEMD_SERVICE_FILE}" ]]; then
+    log "未检测到 systemd 服务文件: ${SYSTEMD_SERVICE_FILE}"
+    log "请先安装 deploy/member-api.service，并执行 systemctl daemon-reload && systemctl enable member-api"
+    exit 1
+  fi
+
   mkdir -p \
     "${SERVER_DIR}" \
     "${WEB_DIR}" \
@@ -101,11 +123,16 @@ main() {
   sudo systemctl restart member-api
   sudo systemctl is-active --quiet member-api
 
-  log "检查 Nginx 配置"
-  sudo nginx -t
+  if [[ -f "${NGINX_CONF_FILE}" ]]; then
+    log "检查 Nginx 配置"
+    sudo nginx -t
 
-  log "重新加载 Nginx"
-  sudo systemctl reload nginx
+    log "重新加载 Nginx"
+    sudo systemctl reload nginx
+  else
+    log "未检测到 Nginx 配置: ${NGINX_CONF_FILE}"
+    log "已跳过 Nginx 校验与重载，请先手动安装 deploy/nginx.conf.example 并替换真实域名"
+  fi
 
   log "部署完成"
   log "备份目录: ${CURRENT_BACKUP_DIR}"

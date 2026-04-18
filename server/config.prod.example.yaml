@@ -1,0 +1,58 @@
+# Meimei Member production config template
+# Copy this file to /opt/meimei-member/server/config.yaml on the server
+# and replace all CHANGE_ME placeholders before first deployment.
+
+jwt:
+  signing-key: "CHANGE_ME_TO_A_RANDOM_JWT_SIGNING_KEY"
+  expires-time: 7d
+  buffer-time: 1d
+  issuer: meimei-member
+
+zap:
+  level: info
+  format: json
+  prefix: "[meimei-member]"
+  director: log
+  show-line: true
+  encode-level: LowercaseLevelEncoder
+  stacktrace-key: stacktrace
+  log-in-console: false
+  retention-day: 30
+
+system:
+  env: public
+  addr: 8888
+  db-type: mysql
+  oss-type: local
+  use-redis: false
+  use-mongo: false
+  use-multipoint: false
+  iplimit-count: 15000
+  iplimit-time: 3600
+  # Keep router-prefix empty because Nginx strips /api before proxying to the backend.
+  router-prefix: ""
+  use-strict-auth: false
+  disable-auto-migrate: false
+
+captcha:
+  key-long: 6
+  img-width: 240
+  img-height: 80
+  open-captcha: 0
+  open-captcha-timeout: 3600
+
+mysql:
+  path: "CHANGE_ME_DB_HOST"
+  port: "3306"
+  config: "charset=utf8mb4&parseTime=True&loc=Local"
+  db-name: "CHANGE_ME_DB_NAME"
+  username: "CHANGE_ME_DB_USERNAME"
+  password: "CHANGE_ME_DB_PASSWORD"
+  max-idle-conns: 10
+  max-open-conns: 100
+  log-mode: ""
+  log-zap: false
+
+local:
+  path: uploads/file
+  store-path: uploads/file

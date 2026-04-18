@@ -1,6 +1,12 @@
 # 自动部署说明
 
-本文档说明当前项目如何通过 GitHub Actions 在 `main` 分支推送后，自动构建 GVA 的 `server/` 与 `web/`，上传服务器并执行远端部署脚本。
+本文档说明当前项目如何通过 GitHub Actions 在 `main` 分支推送后，自动构建 `server/` 与 `web/`，上传服务器并执行远端部署脚本。
+
+重要边界：
+
+- GitHub Actions 只负责后续代码包更新，不负责生成生产密钥、数据库配置或真实域名配置。
+- 第一次部署前，必须手动准备服务器上的 `.env`、`config.yaml`、数据库、systemd 和 Nginx。
+- 真实 `.env`、真实 `config.yaml`、数据库密码、JWT key、域名证书都不能提交到 GitHub。
 
 ## 1. 服务器目录结构
 
@@ -8,25 +14,26 @@
 
 ```text
 /opt/meimei-member/
-├── backups/                 # 每次部署前自动备份旧版本
+├── backups/
 ├── deploy/
 │   ├── deploy.sh
 │   ├── member-api.service
 │   └── nginx.conf.example
-├── release.tar.gz           # GitHub Actions 上传的发布包
-├── releases/                # 每次部署解压目录
+├── release.tar.gz
+├── releases/
 ├── server/
-│   ├── .env                 # 仅服务器保存，不提交 GitHub
-│   ├── config.yaml          # GVA 后端配置
-│   └── member-api           # Go 后端二进制
+│   ├── .env
+│   ├── config.yaml
+│   └── member-api
 └── web/
-    └── dist/                # GVA 管理后台静态文件
+    └── dist/
 ```
 
 说明：
 
-- `miniprogram/` 这一阶段仍然手动上传体验版，不进入自动部署链路。
-- `.env`、数据库密码、微信 `AppSecret` 只保存在服务器，不提交到 GitHub。
+- `server/.env` 只保存在服务器，不提交 GitHub。
+- `server/config.yaml` 只保存在服务器，不提交 GitHub。
+- 可以参考仓库内的 `server/.env.example` 和 `server/config.prod.example.yaml` 手动生成真实生产配置。
 
 ## 2. GitHub Secrets 配置
 
@@ -39,73 +46,13 @@
 
 说明：
 
-- 工作流会使用 `scp` 上传 `release.tar.gz` 与 `deploy/` 下的部署文件。
+- 工作流会上传 `release.tar.gz` 与 `deploy/` 下的部署文件。
 - 工作流随后会远程执行 `/opt/meimei-member/deploy/deploy.sh`。
+- Secrets 只解决 SSH 连接问题，不会替你创建生产 `.env`、`config.yaml` 或数据库。
 
-## 3. SSH Key 配置
+## 3. 首次手动部署步骤
 
-在本地生成部署专用密钥：
-
-```bash
-ssh-keygen -t ed25519 -C "github-actions@meimei-member"
-```
-
-把公钥写入服务器目标用户的 `~/.ssh/authorized_keys`：
-
-```bash
-mkdir -p ~/.ssh
-chmod 700 ~/.ssh
-cat id_ed25519.pub >> ~/.ssh/authorized_keys
-chmod 600 ~/.ssh/authorized_keys
-```
-
-把私钥内容完整复制到 GitHub Secret `DEPLOY_SSH_KEY`。
-
-## 4. systemd 配置
-
-安装 systemd 服务文件：
-
-```bash
-sudo cp /opt/meimei-member/deploy/member-api.service /etc/systemd/system/member-api.service
-sudo systemctl daemon-reload
-sudo systemctl enable member-api
-```
-
-在 `/opt/meimei-member/server/.env` 中准备运行时环境变量，例如：
-
-```bash
-GIN_MODE=release
-GVA_CONFIG=/opt/meimei-member/server/config.yaml
-```
-
-同时准备后端配置文件：
-
-```bash
-cp server/config.yaml /opt/meimei-member/server/config.yaml
-```
-
-## 5. Nginx 配置
-
-安装 Nginx 配置：
-
-```bash
-sudo cp /opt/meimei-member/deploy/nginx.conf.example /etc/nginx/conf.d/meimei-member.conf
-sudo nginx -t
-sudo systemctl reload nginx
-```
-
-配置说明：
-
-- `root` 指向 `/opt/meimei-member/web/dist`
-- `/api/` 请求会先去掉 `/api` 前缀，再反代到本地 `127.0.0.1:8888`
-- 这样可以兼容 GVA 默认 `router-prefix: ""` 的原始后端配置
-- `try_files` 已支持 Vue history fallback
-
-如果你有 HTTPS 或域名证书，可以在此配置基础上继续扩展。
-
-## 6. 首次部署步骤
-
-首次部署建议按下面顺序执行：
+第一次部署必须先手动完成以下准备，再让 GitHub Actions 接手后续更新。
 
 1. 创建服务器目录：
 
@@ -114,16 +61,50 @@ sudo mkdir -p /opt/meimei-member/{deploy,server,web,backups,releases}
 sudo chown -R <deploy-user>:<deploy-user> /opt/meimei-member
 ```
 
-2. 手动上传以下文件到服务器：
+2. 提前创建数据库：
+
+- 在 MySQL 中手动创建业务库。
+- `server/config.prod.example.yaml` 里的 `mysql.db-name`、`username`、`password` 需要替换成真实值。
+
+3. 手动创建 `/opt/meimei-member/server/.env`：
+
+可以先参考仓库模板：
+
+```bash
+cp server/.env.example /opt/meimei-member/server/.env
+```
+
+然后确认内容至少包含：
+
+```bash
+GIN_MODE=release
+GVA_CONFIG=/opt/meimei-member/server/config.yaml
+```
+
+4. 手动创建 `/opt/meimei-member/server/config.yaml`：
+
+可以先参考仓库模板：
+
+```bash
+cp server/config.prod.example.yaml /opt/meimei-member/server/config.yaml
+```
+
+然后至少修改这些真实值：
+
+- `jwt.signing-key`
+- `mysql.path`
+- `mysql.port`
+- `mysql.db-name`
+- `mysql.username`
+- `mysql.password`
+
+5. 手动上传部署文件到服务器：
 
 - `deploy/deploy.sh`
 - `deploy/member-api.service`
 - `deploy/nginx.conf.example`
-- `server/config.yaml`
 
-3. 创建 `/opt/meimei-member/server/.env`，写入运行时环境变量。
-
-4. 安装并启用 systemd 服务：
+6. 安装 systemd 服务：
 
 ```bash
 sudo cp /opt/meimei-member/deploy/member-api.service /etc/systemd/system/member-api.service
@@ -131,29 +112,78 @@ sudo systemctl daemon-reload
 sudo systemctl enable member-api
 ```
 
-5. 安装并启用 Nginx 配置：
+`member-api.service` 当前约定为：
+
+- `WorkingDirectory=/opt/meimei-member/server`
+- `ExecStart=/opt/meimei-member/server/member-api`
+- `EnvironmentFile=/opt/meimei-member/server/.env`
+
+7. 安装 Nginx 配置：
 
 ```bash
 sudo cp /opt/meimei-member/deploy/nginx.conf.example /etc/nginx/conf.d/meimei-member.conf
+```
+
+安装前必须手动修改：
+
+- 将 `your-domain.com` 替换成真实域名
+- 将证书路径替换成真实证书文件路径
+
+然后执行：
+
+```bash
 sudo nginx -t
 sudo systemctl reload nginx
 ```
 
-6. 在 GitHub 配置好四个 Secrets。
-
-7. 本地代码推送到 `main`：
+8. 在 GitHub 配置好四个 Secrets 后，再执行：
 
 ```bash
 git push origin main
 ```
 
-随后 GitHub Actions 会自动：
+## 4. 后续自动部署步骤
 
-- 构建 `server/member-api`
-- 构建 `web/dist`
-- 打包 `release.tar.gz`
-- 上传到 `/opt/meimei-member`
-- 远程执行 `/opt/meimei-member/deploy/deploy.sh`
+首次部署准备完成后，后续流程如下：
+
+1. 本地开发并提交代码
+2. 推送到 GitHub `main`
+3. GitHub Actions 自动执行：
+   - 构建 `server/member-api`
+   - 构建 `web/dist`
+   - 打包 `release.tar.gz`
+   - 上传到 `/opt/meimei-member`
+   - 执行 `/opt/meimei-member/deploy/deploy.sh`
+4. 远端脚本只替换二进制和前端静态文件，不会覆盖真实 `.env` 和 `config.yaml`
+
+## 5. deploy.sh 的前置检查
+
+当前部署脚本会在真正替换文件前检查：
+
+- `/opt/meimei-member/server/.env` 是否存在
+- `/opt/meimei-member/server/config.yaml` 是否存在
+- `/etc/systemd/system/member-api.service` 是否存在
+
+如果上述任一项缺失，脚本会直接报错退出，并提示你先手动准备。
+
+另外：
+
+- 如果 `/etc/nginx/conf.d/meimei-member.conf` 尚未安装，脚本只会提示并跳过 `nginx -t` 与 reload
+- 脚本不会自动覆盖 Nginx 配置，更不会生成真实域名或证书配置
+
+## 6. Nginx 与 router-prefix 说明
+
+当前后端配置模板约定：
+
+- `system.router-prefix: ""`
+
+当前 Nginx 示例约定：
+
+- 前端请求走 `/api/`
+- Nginx 通过 `rewrite ^/api/?(.*)$ /$1 break;` 去掉 `/api`
+- 再反代到本地 `127.0.0.1:8888`
+
+因此两者是配套的，若你未来修改 `router-prefix`，需要同步修改 Nginx 反代规则。
 
 ## 7. 回滚方式
 
@@ -171,22 +201,20 @@ git push origin main
 ls -lah /opt/meimei-member/backups
 ```
 
-2. 选择目标备份，例如 `20260418173000`
-
-3. 回滚后端二进制：
+2. 回滚后端二进制：
 
 ```bash
-cp /opt/meimei-member/backups/20260418173000/server/member-api /opt/meimei-member/server/member-api
+cp /opt/meimei-member/backups/<timestamp>/server/member-api /opt/meimei-member/server/member-api
 ```
 
-4. 回滚前端静态文件：
+3. 回滚前端静态文件：
 
 ```bash
 rm -rf /opt/meimei-member/web/dist
-cp -a /opt/meimei-member/backups/20260418173000/web/dist /opt/meimei-member/web/dist
+cp -a /opt/meimei-member/backups/<timestamp>/web/dist /opt/meimei-member/web/dist
 ```
 
-5. 重新加载服务：
+4. 重新加载服务：
 
 ```bash
 sudo systemctl restart member-api
@@ -194,7 +222,19 @@ sudo nginx -t
 sudo systemctl reload nginx
 ```
 
-## 8. 当前边界
+## 8. 必须留在服务器、不能进 GitHub 的内容
+
+以下内容必须只保留在服务器：
+
+- `/opt/meimei-member/server/.env`
+- `/opt/meimei-member/server/config.yaml`
+- MySQL 真实连接信息
+- JWT 真实签名密钥
+- 域名证书文件
+- 微信 `AppSecret`
+- 任何生产环境私钥、密码、Token
+
+## 9. 当前边界
 
 当前自动部署方案明确不包含以下内容：
 
