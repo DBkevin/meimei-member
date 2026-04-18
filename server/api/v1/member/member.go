@@ -12,6 +12,15 @@ import (
 
 type MemberApi struct{}
 
+// CreateMember
+// @Tags      Member
+// @Summary   创建会员
+// @Security  ApiKeyAuth
+// @Accept    application/json
+// @Produce   application/json
+// @Param     data  body      memberModel.Member            true  "会员信息"
+// @Success   200   {object}  response.Response{msg=string} "创建会员成功"
+// @Router    /member/createMember [post]
 func (a *MemberApi) CreateMember(c *gin.Context) {
 	var member memberModel.Member
 	if err := c.ShouldBindJSON(&member); err != nil {
@@ -26,6 +35,15 @@ func (a *MemberApi) CreateMember(c *gin.Context) {
 	response.OkWithMessage("创建会员成功", c)
 }
 
+// DeleteMember
+// @Tags      Member
+// @Summary   删除会员
+// @Security  ApiKeyAuth
+// @Accept    application/json
+// @Produce   application/json
+// @Param     data  body      request.GetById              true  "会员ID"
+// @Success   200   {object}  response.Response{msg=string} "删除会员成功"
+// @Router    /member/deleteMember [delete]
 func (a *MemberApi) DeleteMember(c *gin.Context) {
 	var info request.GetById
 	if err := c.ShouldBindJSON(&info); err != nil {
@@ -40,6 +58,15 @@ func (a *MemberApi) DeleteMember(c *gin.Context) {
 	response.OkWithMessage("删除会员成功", c)
 }
 
+// UpdateMember
+// @Tags      Member
+// @Summary   更新会员
+// @Security  ApiKeyAuth
+// @Accept    application/json
+// @Produce   application/json
+// @Param     data  body      memberModel.Member            true  "会员信息"
+// @Success   200   {object}  response.Response{msg=string} "更新会员成功"
+// @Router    /member/updateMember [put]
 func (a *MemberApi) UpdateMember(c *gin.Context) {
 	var member memberModel.Member
 	if err := c.ShouldBindJSON(&member); err != nil {
@@ -58,6 +85,15 @@ func (a *MemberApi) UpdateMember(c *gin.Context) {
 	response.OkWithMessage("更新会员成功", c)
 }
 
+// FindMember
+// @Tags      Member
+// @Summary   查询会员详情
+// @Security  ApiKeyAuth
+// @Accept    application/json
+// @Produce   application/json
+// @Param     id    query     int                        true  "会员ID"
+// @Success   200   {object}  response.Response          "查询会员成功"
+// @Router    /member/findMember [get]
 func (a *MemberApi) FindMember(c *gin.Context) {
 	var info request.GetById
 	if err := c.ShouldBindQuery(&info); err != nil {
@@ -73,6 +109,15 @@ func (a *MemberApi) FindMember(c *gin.Context) {
 	response.OkWithDetailed(data, "查询会员成功", c)
 }
 
+// GetMemberList
+// @Tags      Member
+// @Summary   分页获取会员列表
+// @Security  ApiKeyAuth
+// @Accept    application/json
+// @Produce   application/json
+// @Param     data  query     memberReq.MemberSearch      true  "分页与筛选条件"
+// @Success   200   {object}  response.Response{data=response.PageResult,msg=string} "获取会员列表成功"
+// @Router    /member/getMemberList [get]
 func (a *MemberApi) GetMemberList(c *gin.Context) {
 	var pageInfo memberReq.MemberSearch
 	if err := c.ShouldBindQuery(&pageInfo); err != nil {
@@ -93,6 +138,15 @@ func (a *MemberApi) GetMemberList(c *gin.Context) {
 	}, "获取会员列表成功", c)
 }
 
+// UpdateMemberStatus
+// @Tags      Member
+// @Summary   更新会员状态
+// @Security  ApiKeyAuth
+// @Accept    application/json
+// @Produce   application/json
+// @Param     data  body      memberReq.UpdateMemberStatusReq true  "会员ID与状态"
+// @Success   200   {object}  response.Response{msg=string} "更新会员状态成功"
+// @Router    /member/updateMemberStatus [put]
 func (a *MemberApi) UpdateMemberStatus(c *gin.Context) {
 	var req memberReq.UpdateMemberStatusReq
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -107,6 +161,15 @@ func (a *MemberApi) UpdateMemberStatus(c *gin.Context) {
 	response.OkWithMessage("更新会员状态成功", c)
 }
 
+// GetMemberPointAccount
+// @Tags      Member
+// @Summary   获取会员积分账户
+// @Security  ApiKeyAuth
+// @Accept    application/json
+// @Produce   application/json
+// @Param     id    query     int                        true  "会员ID"
+// @Success   200   {object}  response.Response          "获取会员积分账户成功"
+// @Router    /member/getMemberPointAccount [get]
 func (a *MemberApi) GetMemberPointAccount(c *gin.Context) {
 	var info request.GetById
 	if err := c.ShouldBindQuery(&info); err != nil {
@@ -122,6 +185,15 @@ func (a *MemberApi) GetMemberPointAccount(c *gin.Context) {
 	response.OkWithDetailed(account, "获取会员积分账户成功", c)
 }
 
+// GetMemberOptions
+// @Tags      Member
+// @Summary   获取会员选项
+// @Security  ApiKeyAuth
+// @Accept    application/json
+// @Produce   application/json
+// @Param     keyword  query     string                     false  "关键字"
+// @Success   200      {object}  response.Response          "获取会员选项成功"
+// @Router    /member/getMemberOptions [get]
 func (a *MemberApi) GetMemberOptions(c *gin.Context) {
 	var req memberReq.MemberOptionsReq
 	if err := c.ShouldBindQuery(&req); err != nil {

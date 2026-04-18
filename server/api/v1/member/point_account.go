@@ -11,6 +11,15 @@ import (
 
 type PointAccountApi struct{}
 
+// GetPointAccountList
+// @Tags      PointAccount
+// @Summary   分页获取积分账户列表
+// @Security  ApiKeyAuth
+// @Accept    application/json
+// @Produce   application/json
+// @Param     data  query     memberReq.PointAccountSearch true  "分页与筛选条件"
+// @Success   200   {object}  response.Response{data=response.PageResult,msg=string} "获取积分账户列表成功"
+// @Router    /pointAccount/getPointAccountList [get]
 func (a *PointAccountApi) GetPointAccountList(c *gin.Context) {
 	var pageInfo memberReq.PointAccountSearch
 	if err := c.ShouldBindQuery(&pageInfo); err != nil {
@@ -31,6 +40,15 @@ func (a *PointAccountApi) GetPointAccountList(c *gin.Context) {
 	}, "获取积分账户列表成功", c)
 }
 
+// ManualAddPoints
+// @Tags      PointAccount
+// @Summary   手工增加积分
+// @Security  ApiKeyAuth
+// @Accept    application/json
+// @Produce   application/json
+// @Param     data  body      memberReq.AdjustPointsReq    true  "会员ID与积分数量"
+// @Success   200   {object}  response.Response{msg=string} "手工增加积分成功"
+// @Router    /pointAccount/manualAddPoints [post]
 func (a *PointAccountApi) ManualAddPoints(c *gin.Context) {
 	var req memberReq.AdjustPointsReq
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -45,6 +63,15 @@ func (a *PointAccountApi) ManualAddPoints(c *gin.Context) {
 	response.OkWithMessage("手工增加积分成功", c)
 }
 
+// ManualSubPoints
+// @Tags      PointAccount
+// @Summary   手工扣减积分
+// @Security  ApiKeyAuth
+// @Accept    application/json
+// @Produce   application/json
+// @Param     data  body      memberReq.AdjustPointsReq    true  "会员ID与积分数量"
+// @Success   200   {object}  response.Response{msg=string} "手工扣减积分成功"
+// @Router    /pointAccount/manualSubPoints [post]
 func (a *PointAccountApi) ManualSubPoints(c *gin.Context) {
 	var req memberReq.AdjustPointsReq
 	if err := c.ShouldBindJSON(&req); err != nil {

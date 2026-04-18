@@ -12,6 +12,15 @@ import (
 
 type ExchangeOrderApi struct{}
 
+// CreateExchangeOrder
+// @Tags      ExchangeOrder
+// @Summary   创建兑换订单
+// @Security  ApiKeyAuth
+// @Accept    application/json
+// @Produce   application/json
+// @Param     data  body      memberReq.CreateExchangeOrderReq true  "会员ID、商品ID与备注"
+// @Success   200   {object}  response.Response{msg=string}  "创建兑换订单成功"
+// @Router    /exchangeOrder/createExchangeOrder [post]
 func (a *ExchangeOrderApi) CreateExchangeOrder(c *gin.Context) {
 	var req memberReq.CreateExchangeOrderReq
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -26,6 +35,15 @@ func (a *ExchangeOrderApi) CreateExchangeOrder(c *gin.Context) {
 	response.OkWithMessage("创建兑换订单成功", c)
 }
 
+// FindExchangeOrder
+// @Tags      ExchangeOrder
+// @Summary   查询兑换订单详情
+// @Security  ApiKeyAuth
+// @Accept    application/json
+// @Produce   application/json
+// @Param     id    query     int                        true  "兑换订单ID"
+// @Success   200   {object}  response.Response          "查询兑换订单成功"
+// @Router    /exchangeOrder/findExchangeOrder [get]
 func (a *ExchangeOrderApi) FindExchangeOrder(c *gin.Context) {
 	var info request.GetById
 	if err := c.ShouldBindQuery(&info); err != nil {
@@ -41,6 +59,15 @@ func (a *ExchangeOrderApi) FindExchangeOrder(c *gin.Context) {
 	response.OkWithDetailed(order, "查询兑换订单成功", c)
 }
 
+// GetExchangeOrderList
+// @Tags      ExchangeOrder
+// @Summary   分页获取兑换订单列表
+// @Security  ApiKeyAuth
+// @Accept    application/json
+// @Produce   application/json
+// @Param     data  query     memberReq.ExchangeOrderSearch true  "分页与筛选条件"
+// @Success   200   {object}  response.Response{data=response.PageResult,msg=string} "获取兑换订单列表成功"
+// @Router    /exchangeOrder/getExchangeOrderList [get]
 func (a *ExchangeOrderApi) GetExchangeOrderList(c *gin.Context) {
 	var pageInfo memberReq.ExchangeOrderSearch
 	if err := c.ShouldBindQuery(&pageInfo); err != nil {
@@ -61,6 +88,15 @@ func (a *ExchangeOrderApi) GetExchangeOrderList(c *gin.Context) {
 	}, "获取兑换订单列表成功", c)
 }
 
+// VerifyExchangeOrder
+// @Tags      ExchangeOrder
+// @Summary   核销兑换订单
+// @Security  ApiKeyAuth
+// @Accept    application/json
+// @Produce   application/json
+// @Param     data  body      memberReq.OperateExchangeOrderReq true  "订单ID与备注"
+// @Success   200   {object}  response.Response{msg=string}   "核销兑换订单成功"
+// @Router    /exchangeOrder/verifyExchangeOrder [post]
 func (a *ExchangeOrderApi) VerifyExchangeOrder(c *gin.Context) {
 	var req memberReq.OperateExchangeOrderReq
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -75,6 +111,15 @@ func (a *ExchangeOrderApi) VerifyExchangeOrder(c *gin.Context) {
 	response.OkWithMessage("核销兑换订单成功", c)
 }
 
+// CancelExchangeOrder
+// @Tags      ExchangeOrder
+// @Summary   取消兑换订单
+// @Security  ApiKeyAuth
+// @Accept    application/json
+// @Produce   application/json
+// @Param     data  body      memberReq.OperateExchangeOrderReq true  "订单ID与备注"
+// @Success   200   {object}  response.Response{msg=string}   "取消兑换订单成功"
+// @Router    /exchangeOrder/cancelExchangeOrder [post]
 func (a *ExchangeOrderApi) CancelExchangeOrder(c *gin.Context) {
 	var req memberReq.OperateExchangeOrderReq
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -89,6 +134,15 @@ func (a *ExchangeOrderApi) CancelExchangeOrder(c *gin.Context) {
 	response.OkWithMessage("取消兑换订单成功", c)
 }
 
+// RefundExchangeOrder
+// @Tags      ExchangeOrder
+// @Summary   退款兑换订单
+// @Security  ApiKeyAuth
+// @Accept    application/json
+// @Produce   application/json
+// @Param     data  body      memberReq.OperateExchangeOrderReq true  "订单ID与备注"
+// @Success   200   {object}  response.Response{msg=string}   "退款兑换订单成功"
+// @Router    /exchangeOrder/refundExchangeOrder [post]
 func (a *ExchangeOrderApi) RefundExchangeOrder(c *gin.Context) {
 	var req memberReq.OperateExchangeOrderReq
 	if err := c.ShouldBindJSON(&req); err != nil {

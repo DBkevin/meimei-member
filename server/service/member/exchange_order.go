@@ -67,7 +67,16 @@ func (s *ExchangeOrderService) CreateExchangeOrder(req memberReq.CreateExchangeO
 			return err
 		}
 
-		return tx.Model(&memberModel.PointGoods{}).Where("id = ?", goods.ID).Update("stock", goods.Stock-1).Error
+		result := tx.Model(&memberModel.PointGoods{}).
+			Where("id = ? AND stock > 0", goods.ID).
+			UpdateColumn("stock", gorm.Expr("stock - ?", 1))
+		if result.Error != nil {
+			return result.Error
+		}
+		if result.RowsAffected == 0 {
+			return errors.New("商品库存不足")
+		}
+		return nil
 	})
 }
 
@@ -153,7 +162,7 @@ func (s *ExchangeOrderService) rollbackExchangeOrder(req memberReq.OperateExchan
 			return err
 		}
 
-		if err = tx.Model(&memberModel.PointGoods{}).Where("id = ?", goods.ID).Update("stock", goods.Stock+1).Error; err != nil {
+		if err = tx.Model(&memberModel.PointGoods{}).Where("id = ?", goods.ID).UpdateColumn("stock", gorm.Expr("stock + ?", 1)).Error; err != nil {
 			return err
 		}
 

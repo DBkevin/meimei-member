@@ -12,6 +12,15 @@ import (
 
 type PointGoodsApi struct{}
 
+// CreatePointGoods
+// @Tags      PointGoods
+// @Summary   创建积分商品
+// @Security  ApiKeyAuth
+// @Accept    application/json
+// @Produce   application/json
+// @Param     data  body      memberModel.PointGoods       true  "积分商品信息"
+// @Success   200   {object}  response.Response{msg=string} "创建积分商品成功"
+// @Router    /pointGoods/createPointGoods [post]
 func (a *PointGoodsApi) CreatePointGoods(c *gin.Context) {
 	var goods memberModel.PointGoods
 	if err := c.ShouldBindJSON(&goods); err != nil {
@@ -26,6 +35,15 @@ func (a *PointGoodsApi) CreatePointGoods(c *gin.Context) {
 	response.OkWithMessage("创建积分商品成功", c)
 }
 
+// DeletePointGoods
+// @Tags      PointGoods
+// @Summary   删除积分商品
+// @Security  ApiKeyAuth
+// @Accept    application/json
+// @Produce   application/json
+// @Param     data  body      request.GetById              true  "积分商品ID"
+// @Success   200   {object}  response.Response{msg=string} "删除积分商品成功"
+// @Router    /pointGoods/deletePointGoods [delete]
 func (a *PointGoodsApi) DeletePointGoods(c *gin.Context) {
 	var info request.GetById
 	if err := c.ShouldBindJSON(&info); err != nil {
@@ -40,6 +58,15 @@ func (a *PointGoodsApi) DeletePointGoods(c *gin.Context) {
 	response.OkWithMessage("删除积分商品成功", c)
 }
 
+// UpdatePointGoods
+// @Tags      PointGoods
+// @Summary   更新积分商品
+// @Security  ApiKeyAuth
+// @Accept    application/json
+// @Produce   application/json
+// @Param     data  body      memberModel.PointGoods       true  "积分商品信息"
+// @Success   200   {object}  response.Response{msg=string} "更新积分商品成功"
+// @Router    /pointGoods/updatePointGoods [put]
 func (a *PointGoodsApi) UpdatePointGoods(c *gin.Context) {
 	var goods memberModel.PointGoods
 	if err := c.ShouldBindJSON(&goods); err != nil {
@@ -58,6 +85,15 @@ func (a *PointGoodsApi) UpdatePointGoods(c *gin.Context) {
 	response.OkWithMessage("更新积分商品成功", c)
 }
 
+// FindPointGoods
+// @Tags      PointGoods
+// @Summary   查询积分商品详情
+// @Security  ApiKeyAuth
+// @Accept    application/json
+// @Produce   application/json
+// @Param     id    query     int                        true  "积分商品ID"
+// @Success   200   {object}  response.Response          "查询积分商品成功"
+// @Router    /pointGoods/findPointGoods [get]
 func (a *PointGoodsApi) FindPointGoods(c *gin.Context) {
 	var info request.GetById
 	if err := c.ShouldBindQuery(&info); err != nil {
@@ -73,6 +109,15 @@ func (a *PointGoodsApi) FindPointGoods(c *gin.Context) {
 	response.OkWithDetailed(goods, "查询积分商品成功", c)
 }
 
+// GetPointGoodsList
+// @Tags      PointGoods
+// @Summary   分页获取积分商品列表
+// @Security  ApiKeyAuth
+// @Accept    application/json
+// @Produce   application/json
+// @Param     data  query     memberReq.PointGoodsSearch   true  "分页与筛选条件"
+// @Success   200   {object}  response.Response{data=response.PageResult,msg=string} "获取积分商品列表成功"
+// @Router    /pointGoods/getPointGoodsList [get]
 func (a *PointGoodsApi) GetPointGoodsList(c *gin.Context) {
 	var pageInfo memberReq.PointGoodsSearch
 	if err := c.ShouldBindQuery(&pageInfo); err != nil {
@@ -93,6 +138,15 @@ func (a *PointGoodsApi) GetPointGoodsList(c *gin.Context) {
 	}, "获取积分商品列表成功", c)
 }
 
+// UpdatePointGoodsStatus
+// @Tags      PointGoods
+// @Summary   更新积分商品状态
+// @Security  ApiKeyAuth
+// @Accept    application/json
+// @Produce   application/json
+// @Param     data  body      memberReq.UpdateGoodsStatusReq true  "积分商品ID与状态"
+// @Success   200   {object}  response.Response{msg=string} "更新积分商品状态成功"
+// @Router    /pointGoods/updatePointGoodsStatus [put]
 func (a *PointGoodsApi) UpdatePointGoodsStatus(c *gin.Context) {
 	var req memberReq.UpdateGoodsStatusReq
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -107,6 +161,15 @@ func (a *PointGoodsApi) UpdatePointGoodsStatus(c *gin.Context) {
 	response.OkWithMessage("更新积分商品状态成功", c)
 }
 
+// UpdatePointGoodsStock
+// @Tags      PointGoods
+// @Summary   更新积分商品库存
+// @Security  ApiKeyAuth
+// @Accept    application/json
+// @Produce   application/json
+// @Param     data  body      memberReq.UpdateGoodsStockReq true  "积分商品ID与库存"
+// @Success   200   {object}  response.Response{msg=string} "更新积分商品库存成功"
+// @Router    /pointGoods/updatePointGoodsStock [put]
 func (a *PointGoodsApi) UpdatePointGoodsStock(c *gin.Context) {
 	var req memberReq.UpdateGoodsStockReq
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -121,6 +184,15 @@ func (a *PointGoodsApi) UpdatePointGoodsStock(c *gin.Context) {
 	response.OkWithMessage("更新积分商品库存成功", c)
 }
 
+// GetPointGoodsOptions
+// @Tags      PointGoods
+// @Summary   获取积分商品选项
+// @Security  ApiKeyAuth
+// @Accept    application/json
+// @Produce   application/json
+// @Param     keyword  query     string                     false  "关键字"
+// @Success   200      {object}  response.Response          "获取积分商品选项成功"
+// @Router    /pointGoods/getPointGoodsOptions [get]
 func (a *PointGoodsApi) GetPointGoodsOptions(c *gin.Context) {
 	list, err := pointGoodsService.GetPointGoodsOptions(c.Query("keyword"))
 	if err != nil {

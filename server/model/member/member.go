@@ -4,7 +4,7 @@ type Member struct {
 	BaseModel
 	OpenID      string `json:"openid" form:"openid" gorm:"column:openid;size:128;index:idx_member_openid,unique;comment:微信openid"`
 	UnionID     string `json:"unionid" form:"unionid" gorm:"column:unionid;size:128;index;comment:微信unionid"`
-	Mobile      string `json:"mobile" form:"mobile" gorm:"column:mobile;size:32;index;comment:手机号"`
+	Mobile      string `json:"mobile" form:"mobile" gorm:"column:mobile;size:32;uniqueIndex:idx_member_mobile;comment:手机号"`
 	Nickname    string `json:"nickname" form:"nickname" gorm:"column:nickname;size:128;comment:昵称"`
 	AvatarURL   string `json:"avatarUrl" form:"avatarUrl" gorm:"column:avatar_url;size:255;comment:头像地址"`
 	RealName    string `json:"realName" form:"realName" gorm:"column:real_name;size:64;comment:真实姓名"`

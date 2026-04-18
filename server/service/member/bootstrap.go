@@ -2,6 +2,7 @@ package member
 
 import (
 	"errors"
+	"strconv"
 
 	adapter "github.com/casbin/gorm-adapter/v3"
 	"github.com/flipped-aurora/gin-vue-admin/server/global"
@@ -160,7 +161,35 @@ func ensureSuperAdminMenus(tx *gorm.DB, menus []systemModel.SysBaseMenu) error {
 	if err := tx.Where("authority_id = ?", 888).First(&auth).Error; err != nil {
 		return err
 	}
-	return tx.Model(&auth).Association("SysBaseMenus").Append(&menus)
+
+	var existingRelations []systemModel.SysAuthorityMenu
+	if err := tx.Where("sys_authority_authority_id = ?", auth.AuthorityId).Find(&existingRelations).Error; err != nil {
+		return err
+	}
+
+	existingMenuIDs := make(map[string]struct{}, len(existingRelations))
+	for _, item := range existingRelations {
+		existingMenuIDs[item.MenuId] = struct{}{}
+	}
+
+	authorityID := strconv.FormatUint(uint64(auth.AuthorityId), 10)
+	missingRelations := make([]systemModel.SysAuthorityMenu, 0, len(menus))
+	for _, item := range menus {
+		menuID := strconv.FormatUint(uint64(item.ID), 10)
+		if _, ok := existingMenuIDs[menuID]; ok {
+			continue
+		}
+		missingRelations = append(missingRelations, systemModel.SysAuthorityMenu{
+			MenuId:      menuID,
+			AuthorityId: authorityID,
+		})
+	}
+
+	if len(missingRelations) == 0 {
+		return nil
+	}
+
+	return tx.Create(&missingRelations).Error
 }
 
 func ensureSuperAdminCasbin(tx *gorm.DB) error {

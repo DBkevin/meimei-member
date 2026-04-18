@@ -1,6 +1,7 @@
 package member
 
 import (
+	"errors"
 	"strings"
 
 	memberModel "github.com/flipped-aurora/gin-vue-admin/server/model/member"
@@ -11,15 +12,25 @@ import (
 type PointAccountService struct{}
 
 func (s *PointAccountService) GetPointAccountByMemberID(memberID uint) (account memberModel.PointAccount, err error) {
-	err = bizDB().Preload("Member").Where("member_id = ?", memberID).First(&account).Error
-	return
+	member, err := loadMember(bizDB(), memberID)
+	if err != nil {
+		return account, err
+	}
+	err = bizDB().Where("member_id = ?", memberID).First(&account).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return s.buildDefaultAccount(member), nil
+	}
+	if err != nil {
+		return account, err
+	}
+	account.Member = member
+	return account, nil
 }
 
 func (s *PointAccountService) GetPointAccountList(info memberReq.PointAccountSearch) (list []memberModel.PointAccount, total int64, err error) {
-	db := bizDB().Model(&memberModel.PointAccount{}).
-		Joins("LEFT JOIN " + memberModel.Member{}.TableName() + " ON " + memberModel.Member{}.TableName() + ".id = " + memberModel.PointAccount{}.TableName() + ".member_id")
+	db := bizDB().Model(&memberModel.Member{})
 	if info.MemberID > 0 {
-		db = db.Where(memberModel.PointAccount{}.TableName()+".member_id = ?", info.MemberID)
+		db = db.Where(memberModel.Member{}.TableName()+".id = ?", info.MemberID)
 	}
 	if keyword := strings.TrimSpace(info.Keyword); keyword != "" {
 		db = db.Where(memberModel.Member{}.TableName()+".mobile LIKE ? OR "+memberModel.Member{}.TableName()+".nickname LIKE ? OR "+memberModel.Member{}.TableName()+".real_name LIKE ?",
@@ -29,7 +40,37 @@ func (s *PointAccountService) GetPointAccountList(info memberReq.PointAccountSea
 	if err != nil {
 		return
 	}
-	err = db.Preload("Member").Scopes(info.Paginate()).Order(memberModel.PointAccount{}.TableName() + ".created_at desc").Find(&list).Error
+	var members []memberModel.Member
+	err = db.Scopes(info.Paginate()).Order(memberModel.Member{}.TableName() + ".created_at desc").Find(&members).Error
+	if err != nil || len(members) == 0 {
+		return
+	}
+
+	memberIDs := make([]uint, 0, len(members))
+	for _, item := range members {
+		memberIDs = append(memberIDs, item.ID)
+	}
+
+	var accounts []memberModel.PointAccount
+	if err = bizDB().Where("member_id IN ?", memberIDs).Find(&accounts).Error; err != nil {
+		return
+	}
+
+	accountMap := make(map[uint]memberModel.PointAccount, len(accounts))
+	for _, item := range accounts {
+		accountMap[item.MemberID] = item
+	}
+
+	list = make([]memberModel.PointAccount, 0, len(members))
+	for _, item := range members {
+		account, ok := accountMap[item.ID]
+		if !ok {
+			account = s.buildDefaultAccount(item)
+		} else {
+			account.Member = item
+		}
+		list = append(list, account)
+	}
 	return
 }
 
@@ -51,4 +92,15 @@ func (s *PointAccountService) ManualSubPoints(req memberReq.AdjustPointsReq, ope
 		_, err := adjustPoints(tx, req.MemberID, memberModel.PointChangeTypeAdjustSub, req.Points, memberModel.PointSourceTypeManual, 0, req.Remark, operatorID)
 		return err
 	})
+}
+
+func (s *PointAccountService) buildDefaultAccount(member memberModel.Member) memberModel.PointAccount {
+	return memberModel.PointAccount{
+		BaseModel: memberModel.BaseModel{
+			CreatedAt: member.CreatedAt,
+			UpdatedAt: member.UpdatedAt,
+		},
+		MemberID: member.ID,
+		Member:   member,
+	}
 }

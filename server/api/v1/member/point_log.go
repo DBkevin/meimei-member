@@ -10,6 +10,15 @@ import (
 
 type PointLogApi struct{}
 
+// GetPointLogList
+// @Tags      PointLog
+// @Summary   分页获取积分流水列表
+// @Security  ApiKeyAuth
+// @Accept    application/json
+// @Produce   application/json
+// @Param     data  query     memberReq.PointLogSearch      true  "分页与筛选条件"
+// @Success   200   {object}  response.Response{data=response.PageResult,msg=string} "获取积分流水列表成功"
+// @Router    /pointLog/getPointLogList [get]
 func (a *PointLogApi) GetPointLogList(c *gin.Context) {
 	var pageInfo memberReq.PointLogSearch
 	if err := c.ShouldBindQuery(&pageInfo); err != nil {

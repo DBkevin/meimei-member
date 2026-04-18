@@ -12,6 +12,9 @@ type PointGoodsService struct{}
 
 func (s *PointGoodsService) CreatePointGoods(info *memberModel.PointGoods) error {
 	s.normalizeGoods(info)
+	if err := s.validatePointGoods(info); err != nil {
+		return err
+	}
 	return bizDB().Create(info).Error
 }
 
@@ -28,6 +31,9 @@ func (s *PointGoodsService) DeletePointGoods(id uint) error {
 
 func (s *PointGoodsService) UpdatePointGoods(info *memberModel.PointGoods) error {
 	s.normalizeGoods(info)
+	if err := s.validatePointGoods(info); err != nil {
+		return err
+	}
 	updates := map[string]interface{}{
 		"name":             info.Name,
 		"cover_image":      info.CoverImage,
@@ -87,10 +93,38 @@ func (s *PointGoodsService) GetPointGoodsOptions(keyword string) (list []memberM
 }
 
 func (s *PointGoodsService) normalizeGoods(info *memberModel.PointGoods) {
+	if info == nil {
+		return
+	}
 	info.Name = strings.TrimSpace(info.Name)
 	info.CoverImage = strings.TrimSpace(info.CoverImage)
 	info.Description = strings.TrimSpace(info.Description)
 	if info.Status == "" {
 		info.Status = memberModel.GoodsStatusOnSale
 	}
+}
+
+func (s *PointGoodsService) validatePointGoods(info *memberModel.PointGoods) error {
+	if info == nil {
+		return errors.New("商品信息不能为空")
+	}
+	if info.Name == "" {
+		return errors.New("商品名称不能为空")
+	}
+	if info.PointsPrice <= 0 {
+		return errors.New("积分价格必须大于0")
+	}
+	if info.Stock < 0 {
+		return errors.New("库存不能小于0")
+	}
+	if info.LimitPerMember < 0 {
+		return errors.New("每人限兑数量不能小于0")
+	}
+	if info.Sort < 0 {
+		return errors.New("排序不能小于0")
+	}
+	if info.Status != memberModel.GoodsStatusOnSale && info.Status != memberModel.GoodsStatusOffSale {
+		return errors.New("商品状态不合法")
+	}
+	return nil
 }
