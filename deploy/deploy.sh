@@ -102,7 +102,7 @@ main() {
   sudo systemctl is-active --quiet member-api
 
   log "检查 Nginx 配置"
-  nginx -t
+  sudo nginx -t
 
   log "重新加载 Nginx"
   sudo systemctl reload nginx

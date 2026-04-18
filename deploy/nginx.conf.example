@@ -1,6 +1,16 @@
 server {
     listen 80;
-    server_name your-domain.com;
+    server_name aaa.xmmylike.com;
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen 443 ssl;
+    server_name aaa.xmmylike.com;
+
+
+    ssl_certificate      /etc/nginx/ssl/xmmylike.com.pem;
+    ssl_certificate_key  /etc/nginx/ssl/xmmylike.com.key;
 
     root /opt/meimei-member/web/dist;
     index index.html;
