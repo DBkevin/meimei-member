@@ -6,7 +6,7 @@
           <el-input
             v-model="searchInfo.keyword"
             clearable
-            placeholder="手机号 / 昵称 / 真实姓名"
+            placeholder="姓名 / 手机号 / 来源"
             style="width: 240px"
           />
         </el-form-item>
@@ -21,18 +21,18 @@
       <el-table :data="tableData" row-key="id">
         <el-table-column align="left" label="会员" min-width="150">
           <template #default="scope">
-            {{ scope.row.member?.realName || scope.row.member?.nickname || '-' }}
+            {{ scope.row.member?.name || '-' }}
           </template>
         </el-table-column>
         <el-table-column align="left" label="手机号" min-width="120">
           <template #default="scope">
-            {{ scope.row.member?.mobile || '-' }}
+            {{ scope.row.member?.phone || '-' }}
           </template>
         </el-table-column>
-        <el-table-column align="left" label="可用积分" min-width="100" prop="availablePoints" />
+        <el-table-column align="left" label="可用积分" min-width="100" prop="balance" />
         <el-table-column align="left" label="冻结积分" min-width="100" prop="frozenPoints" />
-        <el-table-column align="left" label="累计获得" min-width="100" prop="totalEarnedPoints" />
-        <el-table-column align="left" label="累计使用" min-width="100" prop="totalUsedPoints" />
+        <el-table-column align="left" label="累计获得" min-width="100" prop="totalEarned" />
+        <el-table-column align="left" label="累计消耗" min-width="100" prop="totalSpent" />
         <el-table-column align="left" label="更新时间" min-width="170">
           <template #default="scope">
             {{ formatDate(scope.row.updatedAt) }}
@@ -114,7 +114,7 @@
     if (!currentMember.value) {
       return '-'
     }
-    return currentMember.value.realName || currentMember.value.nickname || currentMember.value.mobile
+    return currentMember.value.name || currentMember.value.phone || '-'
   })
 
   const getTableData = async () => {

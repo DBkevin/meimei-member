@@ -27,10 +27,9 @@ func (s *PointAccountService) GetPointAccountByMemberID(memberID uint) (account 
 			return queryErr
 		}
 
-		createErr := tx.Create(&memberModel.PointAccount{MemberID: memberID}).Error
-		if createErr != nil {
-			retryErr := tx.Where("member_id = ?", memberID).First(&account).Error
-			if retryErr == nil {
+		if createErr := tx.Create(&memberModel.PointAccount{MemberID: memberID}).Error; createErr != nil {
+			queryErr = tx.Where("member_id = ?", memberID).First(&account).Error
+			if queryErr == nil {
 				account.Member = member
 				return nil
 			}
@@ -43,7 +42,7 @@ func (s *PointAccountService) GetPointAccountByMemberID(memberID uint) (account 
 		account.Member = member
 		return nil
 	})
-	return account, nil
+	return
 }
 
 func (s *PointAccountService) GetPointAccountList(info memberReq.PointAccountSearch) (list []memberModel.PointAccount, total int64, err error) {
@@ -52,16 +51,19 @@ func (s *PointAccountService) GetPointAccountList(info memberReq.PointAccountSea
 		db = db.Where(memberModel.Member{}.TableName()+".id = ?", info.MemberID)
 	}
 	if keyword := strings.TrimSpace(info.Keyword); keyword != "" {
-		db = db.Where(memberModel.Member{}.TableName()+".mobile LIKE ? OR "+memberModel.Member{}.TableName()+".nickname LIKE ? OR "+memberModel.Member{}.TableName()+".real_name LIKE ?",
+		db = db.Where(memberModel.Member{}.TableName()+".name LIKE ? OR "+memberModel.Member{}.TableName()+".phone LIKE ? OR "+memberModel.Member{}.TableName()+".source LIKE ?",
 			"%"+keyword+"%", "%"+keyword+"%", "%"+keyword+"%")
 	}
-	err = db.Count(&total).Error
-	if err != nil {
+
+	if err = db.Count(&total).Error; err != nil {
 		return
 	}
+
 	var members []memberModel.Member
-	err = db.Scopes(info.Paginate()).Order(memberModel.Member{}.TableName() + ".created_at desc").Find(&members).Error
-	if err != nil || len(members) == 0 {
+	if err = db.Scopes(info.Paginate()).Order(memberModel.Member{}.TableName() + ".created_at desc").Find(&members).Error; err != nil {
+		return
+	}
+	if len(members) == 0 {
 		return
 	}
 
@@ -84,42 +86,31 @@ func (s *PointAccountService) GetPointAccountList(info memberReq.PointAccountSea
 	for _, item := range members {
 		account, ok := accountMap[item.ID]
 		if !ok {
-			account = s.buildDefaultAccount(item)
-		} else {
-			account.Member = item
+			account = memberModel.PointAccount{MemberID: item.ID}
 		}
+		account.Member = item
 		list = append(list, account)
 	}
 	return
 }
 
 func (s *PointAccountService) ManualAddPoints(req memberReq.AdjustPointsReq, operatorID uint) error {
-	return bizDB().Transaction(func(tx *gorm.DB) error {
-		if _, err := loadMember(tx, req.MemberID); err != nil {
-			return err
-		}
-		_, err := adjustPoints(tx, req.MemberID, memberModel.PointChangeTypeAdjustAdd, req.Points, memberModel.PointSourceTypeManual, 0, req.Remark, operatorID)
-		return err
-	})
+	return s.manualAdjust(req, operatorID, pointActionAdjustAdd, memberModel.PointRefTypeManualAdjustAdd)
 }
 
 func (s *PointAccountService) ManualSubPoints(req memberReq.AdjustPointsReq, operatorID uint) error {
+	return s.manualAdjust(req, operatorID, pointActionAdjustSub, memberModel.PointRefTypeManualAdjustSub)
+}
+
+func (s *PointAccountService) manualAdjust(req memberReq.AdjustPointsReq, operatorID uint, action string, refType string) error {
 	return bizDB().Transaction(func(tx *gorm.DB) error {
 		if _, err := loadMember(tx, req.MemberID); err != nil {
 			return err
 		}
-		_, err := adjustPoints(tx, req.MemberID, memberModel.PointChangeTypeAdjustSub, req.Points, memberModel.PointSourceTypeManual, 0, req.Remark, operatorID)
-		return err
+		change, err := applyPointChange(tx, req.MemberID, action, req.Points)
+		if err != nil {
+			return err
+		}
+		return recordPointTransaction(tx, req.MemberID, change.Account.ID, action, req.Points, change.BeforeBalance, change.AfterBalance, refType, 0, formatOperator(operatorID), req.Remark)
 	})
-}
-
-func (s *PointAccountService) buildDefaultAccount(member memberModel.Member) memberModel.PointAccount {
-	return memberModel.PointAccount{
-		BaseModel: memberModel.BaseModel{
-			CreatedAt: member.CreatedAt,
-			UpdatedAt: member.UpdatedAt,
-		},
-		MemberID: member.ID,
-		Member:   member,
-	}
 }

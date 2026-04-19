@@ -2,11 +2,11 @@ package member
 
 import "github.com/gin-gonic/gin"
 
-type PointLogRouter struct{}
+type PointTransactionRouter struct{}
 
-func (r *PointLogRouter) InitPointLogRouter(Router *gin.RouterGroup) {
-	pointLogRouterWithoutRecord := Router.Group("pointLog")
+func (r *PointTransactionRouter) InitPointTransactionRouter(Router *gin.RouterGroup) {
+	pointTransactionRouterWithoutRecord := Router.Group("pointTransaction")
 	{
-		pointLogRouterWithoutRecord.GET("getPointLogList", pointLogApi.GetPointLogList)
+		pointTransactionRouterWithoutRecord.GET("getPointTransactionList", pointTransactionApi.GetPointTransactionList)
 	}
 }

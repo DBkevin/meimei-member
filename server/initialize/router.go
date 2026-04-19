@@ -105,9 +105,9 @@ func Routers() *gin.Engine {
 		exampleRouter.InitAttachmentCategoryRouterRouter(PrivateGroup)      // 文件上传下载分类
 		memberRouter.InitMemberRouter(PrivateGroup)                         // 会员路由
 		memberRouter.InitPointAccountRouter(PrivateGroup)                   // 积分账户路由
-		memberRouter.InitPointLogRouter(PrivateGroup)                       // 积分流水路由
-		memberRouter.InitPointGoodsRouter(PrivateGroup)                     // 积分商品路由
-		memberRouter.InitExchangeOrderRouter(PrivateGroup)                  // 兑换订单路由
+		memberRouter.InitPointTransactionRouter(PrivateGroup)               // 积分流水路由
+		memberRouter.InitPointProductRouter(PrivateGroup)                   // 积分商品路由
+		memberRouter.InitRedemptionOrderRouter(PrivateGroup)                // 兑换订单路由
 	}
 
 	//插件路由安装

@@ -5,15 +5,15 @@ import "github.com/flipped-aurora/gin-vue-admin/server/service"
 type ApiGroup struct {
 	MemberApi
 	PointAccountApi
-	PointLogApi
-	PointGoodsApi
-	ExchangeOrderApi
+	PointTransactionApi
+	PointProductApi
+	RedemptionOrderApi
 }
 
 var (
-	memberService        = service.ServiceGroupApp.MemberServiceGroup.MemberService
-	pointAccountService  = service.ServiceGroupApp.MemberServiceGroup.PointAccountService
-	pointLogService      = service.ServiceGroupApp.MemberServiceGroup.PointLogService
-	pointGoodsService    = service.ServiceGroupApp.MemberServiceGroup.PointGoodsService
-	exchangeOrderService = service.ServiceGroupApp.MemberServiceGroup.ExchangeOrderService
+	memberService           = service.ServiceGroupApp.MemberServiceGroup.MemberService
+	pointAccountService     = service.ServiceGroupApp.MemberServiceGroup.PointAccountService
+	pointTransactionService = service.ServiceGroupApp.MemberServiceGroup.PointTransactionService
+	pointProductService     = service.ServiceGroupApp.MemberServiceGroup.PointProductService
+	redemptionOrderService  = service.ServiceGroupApp.MemberServiceGroup.RedemptionOrderService
 )

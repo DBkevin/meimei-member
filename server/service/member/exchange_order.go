@@ -3,7 +3,6 @@ package member
 import (
 	"errors"
 	"strings"
-	"time"
 
 	memberModel "github.com/flipped-aurora/gin-vue-admin/server/model/member"
 	memberReq "github.com/flipped-aurora/gin-vue-admin/server/model/member/request"
@@ -11,175 +10,175 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-type ExchangeOrderService struct{}
+type RedemptionOrderService struct{}
 
-func (s *ExchangeOrderService) CreateExchangeOrder(req memberReq.CreateExchangeOrderReq, operatorID uint) error {
+func (s *RedemptionOrderService) CreateRedemptionOrder(req memberReq.CreateRedemptionOrderReq, operatorID uint) error {
+	req.Remark = strings.TrimSpace(req.Remark)
+	req.ReceiverName = strings.TrimSpace(req.ReceiverName)
+	req.ReceiverPhone = strings.TrimSpace(req.ReceiverPhone)
+	if req.Quantity <= 0 {
+		return errors.New("兑换数量必须大于0")
+	}
+
 	return bizDB().Transaction(func(tx *gorm.DB) error {
-		mem, err := loadMember(tx, req.MemberID)
+		member, err := loadMember(tx, req.MemberID)
 		if err != nil {
 			return err
 		}
-		if mem.Status != memberModel.MemberStatusEnabled {
-			return errors.New("会员已被禁用，无法兑换")
+		if member.Status != memberModel.MemberStatusEnabled {
+			return errors.New("会员已禁用，无法兑换")
 		}
 
-		var goods memberModel.PointGoods
-		err = tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where("id = ?", req.GoodsID).First(&goods).Error
+		var product memberModel.PointProduct
+		err = tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where("id = ?", req.ProductID).First(&product).Error
 		if err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				return errors.New("积分商品不存在")
 			}
 			return err
 		}
-		if goods.Status != memberModel.GoodsStatusOnSale {
+		if product.Status != memberModel.PointProductStatusOnSale {
 			return errors.New("商品未上架，无法兑换")
 		}
-		if goods.Stock <= 0 {
+		if product.Stock < req.Quantity {
 			return errors.New("商品库存不足")
 		}
-		if goods.LimitPerMember > 0 {
-			var usedCount int64
-			if err = tx.Model(&memberModel.ExchangeOrder{}).
-				Where("member_id = ? AND goods_id = ? AND status IN ?", req.MemberID, req.GoodsID, []string{memberModel.OrderStatusPending, memberModel.OrderStatusCompleted}).
-				Count(&usedCount).Error; err != nil {
-				return err
-			}
-			if usedCount >= goods.LimitPerMember {
-				return errors.New("已达到该商品每人限兑数量")
-			}
+
+		totalPoints := product.PointsPrice * req.Quantity
+		change, err := applyPointChange(tx, req.MemberID, pointActionSpend, totalPoints)
+		if err != nil {
+			return err
 		}
 
-		order := memberModel.ExchangeOrder{
-			OrderNo:    buildOrderNo(),
-			MemberID:   req.MemberID,
-			GoodsID:    req.GoodsID,
-			PointsCost: goods.PointsPrice,
-			Status:     memberModel.OrderStatusPending,
-			VerifyCode: buildVerifyCode(),
-			OperatorID: operatorID,
-			Remark:     strings.TrimSpace(req.Remark),
+		stockResult := tx.Model(&memberModel.PointProduct{}).
+			Where("id = ? AND stock >= ?", product.ID, req.Quantity).
+			UpdateColumn("stock", gorm.Expr("stock - ?", req.Quantity))
+		if stockResult.Error != nil {
+			return stockResult.Error
+		}
+		if stockResult.RowsAffected != 1 {
+			return errors.New("商品库存不足")
+		}
+
+		order := memberModel.RedemptionOrder{
+			OrderNo:       buildOrderNo(),
+			MemberID:      req.MemberID,
+			ProductID:     product.ID,
+			ProductName:   product.Name,
+			Quantity:      req.Quantity,
+			UnitPoints:    product.PointsPrice,
+			TotalPoints:   totalPoints,
+			Status:        memberModel.RedemptionOrderStatusPending,
+			ReceiverName:  req.ReceiverName,
+			ReceiverPhone: req.ReceiverPhone,
+			Remark:        req.Remark,
 		}
 		if err = tx.Create(&order).Error; err != nil {
 			return err
 		}
 
-		if _, err = adjustPoints(tx, req.MemberID, memberModel.PointChangeTypeUse, goods.PointsPrice, memberModel.PointSourceTypeExchangeOrder, order.ID, order.Remark, operatorID); err != nil {
+		return recordPointTransaction(tx, req.MemberID, change.Account.ID, pointActionSpend, totalPoints, change.BeforeBalance, change.AfterBalance, memberModel.PointRefTypeRedemptionOrder, order.ID, formatOperator(operatorID), req.Remark)
+	})
+}
+
+func (s *RedemptionOrderService) GetRedemptionOrder(id uint) (order memberModel.RedemptionOrder, err error) {
+	err = bizDB().Preload("Member").Preload("Product").Where("id = ?", id).First(&order).Error
+	return
+}
+
+func (s *RedemptionOrderService) GetRedemptionOrderList(info memberReq.RedemptionOrderSearch) (list []memberModel.RedemptionOrder, total int64, err error) {
+	db := bizDB().Model(&memberModel.RedemptionOrder{}).
+		Joins("LEFT JOIN " + memberModel.Member{}.TableName() + " ON " + memberModel.Member{}.TableName() + ".id = " + memberModel.RedemptionOrder{}.TableName() + ".member_id").
+		Joins("LEFT JOIN " + memberModel.PointProduct{}.TableName() + " ON " + memberModel.PointProduct{}.TableName() + ".id = " + memberModel.RedemptionOrder{}.TableName() + ".product_id")
+
+	if info.MemberID > 0 {
+		db = db.Where(memberModel.RedemptionOrder{}.TableName()+".member_id = ?", info.MemberID)
+	}
+	if info.ProductID > 0 {
+		db = db.Where(memberModel.RedemptionOrder{}.TableName()+".product_id = ?", info.ProductID)
+	}
+	if info.Status > 0 {
+		db = db.Where(memberModel.RedemptionOrder{}.TableName()+".status = ?", info.Status)
+	}
+	if keyword := strings.TrimSpace(info.Keyword); keyword != "" {
+		db = db.Where(memberModel.RedemptionOrder{}.TableName()+".order_no LIKE ? OR "+memberModel.RedemptionOrder{}.TableName()+".receiver_name LIKE ? OR "+memberModel.RedemptionOrder{}.TableName()+".receiver_phone LIKE ? OR "+memberModel.RedemptionOrder{}.TableName()+".product_name LIKE ? OR "+memberModel.Member{}.TableName()+".name LIKE ? OR "+memberModel.Member{}.TableName()+".phone LIKE ?",
+			"%"+keyword+"%", "%"+keyword+"%", "%"+keyword+"%", "%"+keyword+"%", "%"+keyword+"%", "%"+keyword+"%")
+	}
+
+	if err = db.Count(&total).Error; err != nil {
+		return
+	}
+	err = db.Preload("Member").Preload("Product").Scopes(info.Paginate()).Order(memberModel.RedemptionOrder{}.TableName() + ".created_at desc").Find(&list).Error
+	return
+}
+
+func (s *RedemptionOrderService) CompleteRedemptionOrder(req memberReq.OperateRedemptionOrderReq, operatorID uint) error {
+	_ = operatorID
+	return bizDB().Transaction(func(tx *gorm.DB) error {
+		order, err := s.lockOrder(tx, req.ID)
+		if err != nil {
 			return err
 		}
-
-		result := tx.Model(&memberModel.PointGoods{}).
-			Where("id = ? AND stock >= ?", goods.ID, int64(1)).
-			UpdateColumn("stock", gorm.Expr("stock - ?", int64(1)))
-		if result.Error != nil {
-			return result.Error
+		if order.Status != memberModel.RedemptionOrderStatusPending {
+			return errors.New("只有待处理订单可以完成")
 		}
-		if result.RowsAffected != 1 {
-			return errors.New("商品库存不足")
+
+		updateResult := tx.Model(&memberModel.RedemptionOrder{}).Where("id = ?", order.ID).Updates(map[string]interface{}{
+			"status": memberModel.RedemptionOrderStatusCompleted,
+			"remark": mergeRemark(order.Remark, req.Remark),
+		})
+		if updateResult.Error != nil {
+			return updateResult.Error
+		}
+		if updateResult.RowsAffected != 1 {
+			return errors.New("更新订单状态失败")
 		}
 		return nil
 	})
 }
 
-func (s *ExchangeOrderService) GetExchangeOrder(id uint) (order memberModel.ExchangeOrder, err error) {
-	err = bizDB().Preload("Member").Preload("Goods").Where("id = ?", id).First(&order).Error
-	return
-}
-
-func (s *ExchangeOrderService) GetExchangeOrderList(info memberReq.ExchangeOrderSearch) (list []memberModel.ExchangeOrder, total int64, err error) {
-	db := bizDB().Model(&memberModel.ExchangeOrder{}).
-		Joins("LEFT JOIN " + memberModel.Member{}.TableName() + " ON " + memberModel.Member{}.TableName() + ".id = " + memberModel.ExchangeOrder{}.TableName() + ".member_id").
-		Joins("LEFT JOIN " + memberModel.PointGoods{}.TableName() + " ON " + memberModel.PointGoods{}.TableName() + ".id = " + memberModel.ExchangeOrder{}.TableName() + ".goods_id")
-
-	if info.MemberID > 0 {
-		db = db.Where(memberModel.ExchangeOrder{}.TableName()+".member_id = ?", info.MemberID)
-	}
-	if info.GoodsID > 0 {
-		db = db.Where(memberModel.ExchangeOrder{}.TableName()+".goods_id = ?", info.GoodsID)
-	}
-	if info.Status != "" {
-		db = db.Where(memberModel.ExchangeOrder{}.TableName()+".status = ?", info.Status)
-	}
-	if keyword := strings.TrimSpace(info.Keyword); keyword != "" {
-		db = db.Where(memberModel.ExchangeOrder{}.TableName()+".order_no LIKE ? OR "+memberModel.ExchangeOrder{}.TableName()+".verify_code LIKE ? OR "+memberModel.Member{}.TableName()+".mobile LIKE ? OR "+memberModel.Member{}.TableName()+".nickname LIKE ? OR "+memberModel.Member{}.TableName()+".real_name LIKE ? OR "+memberModel.PointGoods{}.TableName()+".name LIKE ?",
-			"%"+keyword+"%", "%"+keyword+"%", "%"+keyword+"%", "%"+keyword+"%", "%"+keyword+"%", "%"+keyword+"%")
-	}
-
-	err = db.Count(&total).Error
-	if err != nil {
-		return
-	}
-	err = db.Preload("Member").Preload("Goods").Scopes(info.Paginate()).Order(memberModel.ExchangeOrder{}.TableName() + ".created_at desc").Find(&list).Error
-	return
-}
-
-func (s *ExchangeOrderService) VerifyExchangeOrder(req memberReq.OperateExchangeOrderReq, operatorID uint) error {
+func (s *RedemptionOrderService) CancelRedemptionOrder(req memberReq.OperateRedemptionOrderReq, operatorID uint) error {
 	return bizDB().Transaction(func(tx *gorm.DB) error {
 		order, err := s.lockOrder(tx, req.ID)
 		if err != nil {
 			return err
 		}
-		if order.Status != memberModel.OrderStatusPending {
-			return errors.New("只有待核销订单可以核销")
+		if order.Status != memberModel.RedemptionOrderStatusPending {
+			return errors.New("只有待处理订单可以取消")
 		}
-		now := time.Now()
-		updates := map[string]interface{}{
-			"status":      memberModel.OrderStatusCompleted,
-			"verified_at": &now,
-			"operator_id": operatorID,
-			"remark":      mergeRemark(order.Remark, req.Remark),
-		}
-		return tx.Model(&memberModel.ExchangeOrder{}).Where("id = ?", order.ID).Updates(updates).Error
-	})
-}
 
-func (s *ExchangeOrderService) CancelExchangeOrder(req memberReq.OperateExchangeOrderReq, operatorID uint) error {
-	return s.rollbackExchangeOrder(req, operatorID, memberModel.OrderStatusPending, memberModel.OrderStatusCancelled)
-}
-
-func (s *ExchangeOrderService) RefundExchangeOrder(req memberReq.OperateExchangeOrderReq, operatorID uint) error {
-	return s.rollbackExchangeOrder(req, operatorID, memberModel.OrderStatusCompleted, memberModel.OrderStatusRefunded)
-}
-
-func (s *ExchangeOrderService) rollbackExchangeOrder(req memberReq.OperateExchangeOrderReq, operatorID uint, fromStatus string, toStatus string) error {
-	return bizDB().Transaction(func(tx *gorm.DB) error {
-		order, err := s.lockOrder(tx, req.ID)
+		change, err := applyPointChange(tx, order.MemberID, pointActionRefund, order.TotalPoints)
 		if err != nil {
 			return err
 		}
-		if order.Status != fromStatus {
-			if toStatus == memberModel.OrderStatusCancelled {
-				return errors.New("只有待核销订单可以取消")
-			}
-			return errors.New("只有已完成订单可以退款")
+
+		stockResult := tx.Model(&memberModel.PointProduct{}).
+			Where("id = ?", order.ProductID).
+			UpdateColumn("stock", gorm.Expr("stock + ?", order.Quantity))
+		if stockResult.Error != nil {
+			return stockResult.Error
+		}
+		if stockResult.RowsAffected != 1 {
+			return errors.New("恢复商品库存失败")
 		}
 
-		var goods memberModel.PointGoods
-		if err = tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where("id = ?", order.GoodsID).First(&goods).Error; err != nil {
-			return err
+		updateResult := tx.Model(&memberModel.RedemptionOrder{}).Where("id = ?", order.ID).Updates(map[string]interface{}{
+			"status": memberModel.RedemptionOrderStatusCancelled,
+			"remark": mergeRemark(order.Remark, req.Remark),
+		})
+		if updateResult.Error != nil {
+			return updateResult.Error
+		}
+		if updateResult.RowsAffected != 1 {
+			return errors.New("更新订单状态失败")
 		}
 
-		if _, err = adjustPoints(tx, order.MemberID, memberModel.PointChangeTypeRefund, order.PointsCost, memberModel.PointSourceTypeExchangeOrderVoid, order.ID, req.Remark, operatorID); err != nil {
-			return err
-		}
-
-		if err = tx.Model(&memberModel.PointGoods{}).Where("id = ?", goods.ID).UpdateColumn("stock", gorm.Expr("stock + ?", 1)).Error; err != nil {
-			return err
-		}
-
-		updates := map[string]interface{}{
-			"status":      toStatus,
-			"operator_id": operatorID,
-			"remark":      mergeRemark(order.Remark, req.Remark),
-		}
-		if toStatus == memberModel.OrderStatusRefunded {
-			updates["verified_at"] = nil
-		}
-		return tx.Model(&memberModel.ExchangeOrder{}).Where("id = ?", order.ID).Updates(updates).Error
+		return recordPointTransaction(tx, order.MemberID, change.Account.ID, pointActionRefund, order.TotalPoints, change.BeforeBalance, change.AfterBalance, memberModel.PointRefTypeRedemptionOrderVoid, order.ID, formatOperator(operatorID), req.Remark)
 	})
 }
 
-func (s *ExchangeOrderService) lockOrder(tx *gorm.DB, id uint) (memberModel.ExchangeOrder, error) {
-	var order memberModel.ExchangeOrder
+func (s *RedemptionOrderService) lockOrder(tx *gorm.DB, id uint) (memberModel.RedemptionOrder, error) {
+	var order memberModel.RedemptionOrder
 	err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where("id = ?", id).First(&order).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return order, errors.New("兑换订单不存在")

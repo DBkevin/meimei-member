@@ -5,21 +5,20 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type PointGoodsRouter struct{}
+type PointProductRouter struct{}
 
-func (r *PointGoodsRouter) InitPointGoodsRouter(Router *gin.RouterGroup) {
-	pointGoodsRouter := Router.Group("pointGoods").Use(middleware.OperationRecord())
-	pointGoodsRouterWithoutRecord := Router.Group("pointGoods")
+func (r *PointProductRouter) InitPointProductRouter(Router *gin.RouterGroup) {
+	pointProductRouter := Router.Group("pointProduct").Use(middleware.OperationRecord())
+	pointProductRouterWithoutRecord := Router.Group("pointProduct")
 	{
-		pointGoodsRouter.POST("createPointGoods", pointGoodsApi.CreatePointGoods)
-		pointGoodsRouter.DELETE("deletePointGoods", pointGoodsApi.DeletePointGoods)
-		pointGoodsRouter.PUT("updatePointGoods", pointGoodsApi.UpdatePointGoods)
-		pointGoodsRouter.PUT("updatePointGoodsStatus", pointGoodsApi.UpdatePointGoodsStatus)
-		pointGoodsRouter.PUT("updatePointGoodsStock", pointGoodsApi.UpdatePointGoodsStock)
+		pointProductRouter.POST("createPointProduct", pointProductApi.CreatePointProduct)
+		pointProductRouter.DELETE("deletePointProduct", pointProductApi.DeletePointProduct)
+		pointProductRouter.PUT("updatePointProduct", pointProductApi.UpdatePointProduct)
+		pointProductRouter.PUT("updatePointProductStatus", pointProductApi.UpdatePointProductStatus)
 	}
 	{
-		pointGoodsRouterWithoutRecord.GET("findPointGoods", pointGoodsApi.FindPointGoods)
-		pointGoodsRouterWithoutRecord.GET("getPointGoodsList", pointGoodsApi.GetPointGoodsList)
-		pointGoodsRouterWithoutRecord.GET("getPointGoodsOptions", pointGoodsApi.GetPointGoodsOptions)
+		pointProductRouterWithoutRecord.GET("findPointProduct", pointProductApi.FindPointProduct)
+		pointProductRouterWithoutRecord.GET("getPointProductList", pointProductApi.GetPointProductList)
+		pointProductRouterWithoutRecord.GET("getPointProductOptions", pointProductApi.GetPointProductOptions)
 	}
 }

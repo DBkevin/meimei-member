@@ -36,31 +36,30 @@ func ensureSysApis(tx *gorm.DB) error {
 		{ApiGroup: "会员管理", Method: "PUT", Path: "/member/updateMember", Description: "更新会员"},
 		{ApiGroup: "会员管理", Method: "GET", Path: "/member/findMember", Description: "查询会员详情"},
 		{ApiGroup: "会员管理", Method: "GET", Path: "/member/getMemberList", Description: "获取会员列表"},
-		{ApiGroup: "会员管理", Method: "PUT", Path: "/member/updateMemberStatus", Description: "启用禁用会员"},
+		{ApiGroup: "会员管理", Method: "PUT", Path: "/member/updateMemberStatus", Description: "更新会员状态"},
 		{ApiGroup: "会员管理", Method: "GET", Path: "/member/getMemberPointAccount", Description: "获取会员积分账户"},
 		{ApiGroup: "会员管理", Method: "GET", Path: "/member/getMemberOptions", Description: "获取会员选项"},
 
+		{ApiGroup: "积分账户", Method: "GET", Path: "/pointAccount/findPointAccount", Description: "查询积分账户"},
 		{ApiGroup: "积分账户", Method: "GET", Path: "/pointAccount/getPointAccountList", Description: "获取积分账户列表"},
 		{ApiGroup: "积分账户", Method: "POST", Path: "/pointAccount/manualAddPoints", Description: "手工增加积分"},
 		{ApiGroup: "积分账户", Method: "POST", Path: "/pointAccount/manualSubPoints", Description: "手工扣减积分"},
 
-		{ApiGroup: "积分流水", Method: "GET", Path: "/pointLog/getPointLogList", Description: "获取积分流水列表"},
+		{ApiGroup: "积分流水", Method: "GET", Path: "/pointTransaction/getPointTransactionList", Description: "获取积分流水列表"},
 
-		{ApiGroup: "积分商品", Method: "POST", Path: "/pointGoods/createPointGoods", Description: "创建积分商品"},
-		{ApiGroup: "积分商品", Method: "DELETE", Path: "/pointGoods/deletePointGoods", Description: "删除积分商品"},
-		{ApiGroup: "积分商品", Method: "PUT", Path: "/pointGoods/updatePointGoods", Description: "更新积分商品"},
-		{ApiGroup: "积分商品", Method: "GET", Path: "/pointGoods/findPointGoods", Description: "查询积分商品详情"},
-		{ApiGroup: "积分商品", Method: "GET", Path: "/pointGoods/getPointGoodsList", Description: "获取积分商品列表"},
-		{ApiGroup: "积分商品", Method: "PUT", Path: "/pointGoods/updatePointGoodsStatus", Description: "上下架积分商品"},
-		{ApiGroup: "积分商品", Method: "PUT", Path: "/pointGoods/updatePointGoodsStock", Description: "更新积分商品库存"},
-		{ApiGroup: "积分商品", Method: "GET", Path: "/pointGoods/getPointGoodsOptions", Description: "获取积分商品选项"},
+		{ApiGroup: "积分商品", Method: "POST", Path: "/pointProduct/createPointProduct", Description: "创建积分商品"},
+		{ApiGroup: "积分商品", Method: "DELETE", Path: "/pointProduct/deletePointProduct", Description: "删除积分商品"},
+		{ApiGroup: "积分商品", Method: "PUT", Path: "/pointProduct/updatePointProduct", Description: "更新积分商品"},
+		{ApiGroup: "积分商品", Method: "GET", Path: "/pointProduct/findPointProduct", Description: "查询积分商品详情"},
+		{ApiGroup: "积分商品", Method: "GET", Path: "/pointProduct/getPointProductList", Description: "获取积分商品列表"},
+		{ApiGroup: "积分商品", Method: "PUT", Path: "/pointProduct/updatePointProductStatus", Description: "上下架积分商品"},
+		{ApiGroup: "积分商品", Method: "GET", Path: "/pointProduct/getPointProductOptions", Description: "获取积分商品选项"},
 
-		{ApiGroup: "兑换订单", Method: "POST", Path: "/exchangeOrder/createExchangeOrder", Description: "创建兑换订单"},
-		{ApiGroup: "兑换订单", Method: "GET", Path: "/exchangeOrder/findExchangeOrder", Description: "查询兑换订单详情"},
-		{ApiGroup: "兑换订单", Method: "GET", Path: "/exchangeOrder/getExchangeOrderList", Description: "获取兑换订单列表"},
-		{ApiGroup: "兑换订单", Method: "POST", Path: "/exchangeOrder/verifyExchangeOrder", Description: "核销兑换订单"},
-		{ApiGroup: "兑换订单", Method: "POST", Path: "/exchangeOrder/cancelExchangeOrder", Description: "取消兑换订单"},
-		{ApiGroup: "兑换订单", Method: "POST", Path: "/exchangeOrder/refundExchangeOrder", Description: "退款兑换订单"},
+		{ApiGroup: "兑换订单", Method: "POST", Path: "/redemptionOrder/createRedemptionOrder", Description: "创建兑换订单"},
+		{ApiGroup: "兑换订单", Method: "GET", Path: "/redemptionOrder/findRedemptionOrder", Description: "查询兑换订单详情"},
+		{ApiGroup: "兑换订单", Method: "GET", Path: "/redemptionOrder/getRedemptionOrderList", Description: "获取兑换订单列表"},
+		{ApiGroup: "兑换订单", Method: "POST", Path: "/redemptionOrder/completeRedemptionOrder", Description: "完成兑换订单"},
+		{ApiGroup: "兑换订单", Method: "POST", Path: "/redemptionOrder/cancelRedemptionOrder", Description: "取消兑换订单"},
 	}
 
 	for _, item := range apis {
@@ -111,9 +110,9 @@ func ensureMenus(tx *gorm.DB) ([]systemModel.SysBaseMenu, error) {
 	}{
 		{Name: "memberList", Path: "members", Component: "view/member/member/index.vue", Sort: 1, Title: "会员管理", Icon: "user"},
 		{Name: "pointAccount", Path: "point-accounts", Component: "view/member/account/index.vue", Sort: 2, Title: "积分账户", Icon: "coin"},
-		{Name: "pointLog", Path: "point-logs", Component: "view/member/log/index.vue", Sort: 3, Title: "积分流水", Icon: "tickets"},
-		{Name: "pointGoods", Path: "point-goods", Component: "view/member/goods/index.vue", Sort: 4, Title: "积分商品", Icon: "goods-filled"},
-		{Name: "exchangeOrder", Path: "exchange-orders", Component: "view/member/order/index.vue", Sort: 5, Title: "兑换订单", Icon: "memo"},
+		{Name: "pointTransaction", Path: "point-transactions", Component: "view/member/log/index.vue", Sort: 3, Title: "积分流水", Icon: "tickets"},
+		{Name: "pointProduct", Path: "point-products", Component: "view/member/goods/index.vue", Sort: 4, Title: "积分商品", Icon: "goods-filled"},
+		{Name: "redemptionOrder", Path: "redemption-orders", Component: "view/member/order/index.vue", Sort: 5, Title: "兑换订单", Icon: "memo"},
 	}
 
 	result := []systemModel.SysBaseMenu{parent}
@@ -188,7 +187,6 @@ func ensureSuperAdminMenus(tx *gorm.DB, menus []systemModel.SysBaseMenu) error {
 	if len(missingRelations) == 0 {
 		return nil
 	}
-
 	return tx.Create(&missingRelations).Error
 }
 
@@ -202,24 +200,27 @@ func ensureSuperAdminCasbin(tx *gorm.DB) error {
 		{Ptype: "p", V0: "888", V1: "/member/updateMemberStatus", V2: "PUT"},
 		{Ptype: "p", V0: "888", V1: "/member/getMemberPointAccount", V2: "GET"},
 		{Ptype: "p", V0: "888", V1: "/member/getMemberOptions", V2: "GET"},
+
+		{Ptype: "p", V0: "888", V1: "/pointAccount/findPointAccount", V2: "GET"},
 		{Ptype: "p", V0: "888", V1: "/pointAccount/getPointAccountList", V2: "GET"},
 		{Ptype: "p", V0: "888", V1: "/pointAccount/manualAddPoints", V2: "POST"},
 		{Ptype: "p", V0: "888", V1: "/pointAccount/manualSubPoints", V2: "POST"},
-		{Ptype: "p", V0: "888", V1: "/pointLog/getPointLogList", V2: "GET"},
-		{Ptype: "p", V0: "888", V1: "/pointGoods/createPointGoods", V2: "POST"},
-		{Ptype: "p", V0: "888", V1: "/pointGoods/deletePointGoods", V2: "DELETE"},
-		{Ptype: "p", V0: "888", V1: "/pointGoods/updatePointGoods", V2: "PUT"},
-		{Ptype: "p", V0: "888", V1: "/pointGoods/findPointGoods", V2: "GET"},
-		{Ptype: "p", V0: "888", V1: "/pointGoods/getPointGoodsList", V2: "GET"},
-		{Ptype: "p", V0: "888", V1: "/pointGoods/updatePointGoodsStatus", V2: "PUT"},
-		{Ptype: "p", V0: "888", V1: "/pointGoods/updatePointGoodsStock", V2: "PUT"},
-		{Ptype: "p", V0: "888", V1: "/pointGoods/getPointGoodsOptions", V2: "GET"},
-		{Ptype: "p", V0: "888", V1: "/exchangeOrder/createExchangeOrder", V2: "POST"},
-		{Ptype: "p", V0: "888", V1: "/exchangeOrder/findExchangeOrder", V2: "GET"},
-		{Ptype: "p", V0: "888", V1: "/exchangeOrder/getExchangeOrderList", V2: "GET"},
-		{Ptype: "p", V0: "888", V1: "/exchangeOrder/verifyExchangeOrder", V2: "POST"},
-		{Ptype: "p", V0: "888", V1: "/exchangeOrder/cancelExchangeOrder", V2: "POST"},
-		{Ptype: "p", V0: "888", V1: "/exchangeOrder/refundExchangeOrder", V2: "POST"},
+
+		{Ptype: "p", V0: "888", V1: "/pointTransaction/getPointTransactionList", V2: "GET"},
+
+		{Ptype: "p", V0: "888", V1: "/pointProduct/createPointProduct", V2: "POST"},
+		{Ptype: "p", V0: "888", V1: "/pointProduct/deletePointProduct", V2: "DELETE"},
+		{Ptype: "p", V0: "888", V1: "/pointProduct/updatePointProduct", V2: "PUT"},
+		{Ptype: "p", V0: "888", V1: "/pointProduct/findPointProduct", V2: "GET"},
+		{Ptype: "p", V0: "888", V1: "/pointProduct/getPointProductList", V2: "GET"},
+		{Ptype: "p", V0: "888", V1: "/pointProduct/updatePointProductStatus", V2: "PUT"},
+		{Ptype: "p", V0: "888", V1: "/pointProduct/getPointProductOptions", V2: "GET"},
+
+		{Ptype: "p", V0: "888", V1: "/redemptionOrder/createRedemptionOrder", V2: "POST"},
+		{Ptype: "p", V0: "888", V1: "/redemptionOrder/findRedemptionOrder", V2: "GET"},
+		{Ptype: "p", V0: "888", V1: "/redemptionOrder/getRedemptionOrderList", V2: "GET"},
+		{Ptype: "p", V0: "888", V1: "/redemptionOrder/completeRedemptionOrder", V2: "POST"},
+		{Ptype: "p", V0: "888", V1: "/redemptionOrder/cancelRedemptionOrder", V2: "POST"},
 	}
 
 	for _, item := range rules {

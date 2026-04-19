@@ -7,6 +7,7 @@ import (
 )
 
 func TestPluginEnter_Injection(t *testing.T) {
+	requirePluginGVAFixture(t, "api", "enter.go")
 	type fields struct {
 		Type            Type
 		Path            string
@@ -111,6 +112,7 @@ func TestPluginEnter_Injection(t *testing.T) {
 }
 
 func TestPluginEnter_Rollback(t *testing.T) {
+	requirePluginGVAFixture(t, "api", "enter.go")
 	type fields struct {
 		Type            Type
 		Path            string

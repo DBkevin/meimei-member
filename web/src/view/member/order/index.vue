@@ -6,8 +6,8 @@
           <el-input
             v-model="searchInfo.keyword"
             clearable
-            placeholder="订单号 / 核销码 / 会员 / 商品"
-            style="width: 280px"
+            placeholder="订单号 / 会员 / 手机号 / 商品 / 收货人"
+            style="width: 300px"
           />
         </el-form-item>
         <el-form-item label="订单状态">
@@ -34,22 +34,22 @@
           </template>
         </el-table-column>
         <el-table-column align="left" label="订单号" min-width="180" prop="orderNo" />
-        <el-table-column align="left" label="会员" min-width="150">
+        <el-table-column align="left" label="会员" min-width="120">
           <template #default="scope">
-            {{ scope.row.member?.realName || scope.row.member?.nickname || '-' }}
+            {{ scope.row.member?.name || '-' }}
           </template>
         </el-table-column>
         <el-table-column align="left" label="手机号" min-width="120">
           <template #default="scope">
-            {{ scope.row.member?.mobile || '-' }}
+            {{ scope.row.member?.phone || '-' }}
           </template>
         </el-table-column>
-        <el-table-column align="left" label="兑换商品" min-width="160">
-          <template #default="scope">
-            {{ scope.row.goods?.name || '-' }}
-          </template>
-        </el-table-column>
-        <el-table-column align="left" label="消耗积分" min-width="100" prop="pointsCost" />
+        <el-table-column align="left" label="兑换商品" min-width="160" prop="productName" />
+        <el-table-column align="left" label="数量" min-width="80" prop="quantity" />
+        <el-table-column align="left" label="单件积分" min-width="100" prop="unitPoints" />
+        <el-table-column align="left" label="总积分" min-width="100" prop="totalPoints" />
+        <el-table-column align="left" label="收货人" min-width="120" prop="receiverName" />
+        <el-table-column align="left" label="联系电话" min-width="120" prop="receiverPhone" />
         <el-table-column align="left" label="状态" min-width="100">
           <template #default="scope">
             <el-tag :type="statusTagType(scope.row.status)">
@@ -57,41 +57,27 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column align="left" label="核销码" min-width="100" prop="verifyCode" />
-        <el-table-column align="left" label="核销时间" min-width="170">
-          <template #default="scope">
-            {{ scope.row.verifiedAt ? formatDate(scope.row.verifiedAt) : '-' }}
-          </template>
-        </el-table-column>
-        <el-table-column align="left" label="操作" min-width="280" fixed="right">
+        <el-table-column align="left" label="备注" min-width="180" prop="remark" show-overflow-tooltip />
+        <el-table-column align="left" label="操作" min-width="240" fixed="right">
           <template #default="scope">
             <el-button link type="primary" icon="view" @click="openDetailDialog(scope.row)">详情</el-button>
             <el-button
-              v-if="scope.row.status === 'pending'"
+              v-if="scope.row.status === 1"
               link
               type="success"
               icon="select"
-              @click="handleOrderAction(scope.row, 'verify')"
+              @click="handleOrderAction(scope.row, 'complete')"
             >
-              核销
+              完成
             </el-button>
             <el-button
-              v-if="scope.row.status === 'pending'"
+              v-if="scope.row.status === 1"
               link
               type="warning"
               icon="close-bold"
               @click="handleOrderAction(scope.row, 'cancel')"
             >
               取消
-            </el-button>
-            <el-button
-              v-if="scope.row.status === 'completed'"
-              link
-              type="danger"
-              icon="refresh-left"
-              @click="handleOrderAction(scope.row, 'refund')"
-            >
-              退款
             </el-button>
           </template>
         </el-table-column>
@@ -110,7 +96,7 @@
       </div>
     </div>
 
-    <el-dialog v-model="createDialogVisible" title="新建兑换订单" width="560px">
+    <el-dialog v-model="createDialogVisible" title="新建兑换订单" width="620px">
       <el-form label-width="100px" :model="createForm">
         <el-form-item label="选择会员">
           <el-select
@@ -119,7 +105,7 @@
             filterable
             remote
             reserve-keyword
-            placeholder="输入手机号 / 昵称检索会员"
+            placeholder="输入姓名 / 手机号检索会员"
             style="width: 100%"
             :remote-method="loadMemberOptions"
           >
@@ -133,29 +119,38 @@
         </el-form-item>
         <el-form-item label="选择商品">
           <el-select
-            v-model="createForm.goodsId"
+            v-model="createForm.productId"
             clearable
             filterable
             remote
             reserve-keyword
             placeholder="输入商品名称检索商品"
             style="width: 100%"
-            :remote-method="loadGoodsOptions"
+            :remote-method="loadProductOptions"
           >
             <el-option
-              v-for="item in goodsOptions"
+              v-for="item in productOptions"
               :key="item.id"
               :label="`${item.name} · ${item.pointsPrice}积分 · 库存${item.stock}`"
               :value="item.id"
             />
           </el-select>
         </el-form-item>
-        <el-form-item v-if="selectedGoods" label="商品信息">
+        <el-form-item v-if="selectedProduct" label="商品信息">
           <div class="order-summary">
-            <div>积分价格：{{ selectedGoods.pointsPrice }}</div>
-            <div>当前库存：{{ selectedGoods.stock }}</div>
-            <div>每人限兑：{{ selectedGoods.limitPerMember || '不限' }}</div>
+            <div>积分价格：{{ selectedProduct.pointsPrice }}</div>
+            <div>当前库存：{{ selectedProduct.stock }}</div>
+            <div>商品分类：{{ selectedProduct.category || '-' }}</div>
           </div>
+        </el-form-item>
+        <el-form-item label="兑换数量">
+          <el-input-number v-model="createForm.quantity" :min="1" style="width: 100%" />
+        </el-form-item>
+        <el-form-item label="收货人">
+          <el-input v-model="createForm.receiverName" clearable />
+        </el-form-item>
+        <el-form-item label="联系电话">
+          <el-input v-model="createForm.receiverPhone" clearable />
         </el-form-item>
         <el-form-item label="备注">
           <el-input v-model="createForm.remark" :rows="3" type="textarea" />
@@ -176,22 +171,31 @@
           {{ statusLabel(detailData.status) }}
         </el-descriptions-item>
         <el-descriptions-item label="会员">
-          {{ detailData.member?.realName || detailData.member?.nickname || '-' }}
+          {{ detailData.member?.name || '-' }}
         </el-descriptions-item>
         <el-descriptions-item label="手机号">
-          {{ detailData.member?.mobile || '-' }}
+          {{ detailData.member?.phone || '-' }}
         </el-descriptions-item>
         <el-descriptions-item label="兑换商品">
-          {{ detailData.goods?.name || '-' }}
+          {{ detailData.productName || '-' }}
         </el-descriptions-item>
-        <el-descriptions-item label="消耗积分">
-          {{ detailData.pointsCost || 0 }}
+        <el-descriptions-item label="商品ID">
+          {{ detailData.productId || '-' }}
         </el-descriptions-item>
-        <el-descriptions-item label="核销码">
-          {{ detailData.verifyCode || '-' }}
+        <el-descriptions-item label="数量">
+          {{ detailData.quantity || 0 }}
         </el-descriptions-item>
-        <el-descriptions-item label="核销时间">
-          {{ detailData.verifiedAt ? formatDate(detailData.verifiedAt) : '-' }}
+        <el-descriptions-item label="单件积分">
+          {{ detailData.unitPoints || 0 }}
+        </el-descriptions-item>
+        <el-descriptions-item label="总积分">
+          {{ detailData.totalPoints || 0 }}
+        </el-descriptions-item>
+        <el-descriptions-item label="收货人">
+          {{ detailData.receiverName || '-' }}
+        </el-descriptions-item>
+        <el-descriptions-item label="联系电话">
+          {{ detailData.receiverPhone || '-' }}
         </el-descriptions-item>
         <el-descriptions-item label="备注" :span="2">
           {{ detailData.remark || '-' }}
@@ -203,28 +207,26 @@
 
 <script setup>
   import {
-    cancelExchangeOrder,
-    createExchangeOrder,
-    findExchangeOrder,
-    getExchangeOrderList,
+    cancelRedemptionOrder,
+    completeRedemptionOrder,
+    createRedemptionOrder,
+    findRedemptionOrder,
     getMemberOptions,
-    getPointGoodsOptions,
-    refundExchangeOrder,
-    verifyExchangeOrder
+    getPointProductOptions,
+    getRedemptionOrderList
   } from '@/api/member'
   import { formatDate } from '@/utils/format'
   import { ElMessage, ElMessageBox } from 'element-plus'
   import { computed, ref } from 'vue'
 
   defineOptions({
-    name: 'ExchangeOrderPage'
+    name: 'RedemptionOrderPage'
   })
 
   const statusOptions = [
-    { label: '待核销', value: 'pending' },
-    { label: '已完成', value: 'completed' },
-    { label: '已取消', value: 'cancelled' },
-    { label: '已退款', value: 'refunded' }
+    { label: '待处理', value: 1 },
+    { label: '已完成', value: 2 },
+    { label: '已取消', value: 3 }
   ]
 
   const searchInfo = ref({
@@ -241,14 +243,17 @@
   const detailDialogVisible = ref(false)
   const createForm = ref({
     memberId: '',
-    goodsId: '',
+    productId: '',
+    quantity: 1,
+    receiverName: '',
+    receiverPhone: '',
     remark: ''
   })
   const detailData = ref({})
   const memberOptions = ref([])
-  const goodsOptions = ref([])
+  const productOptions = ref([])
 
-  const selectedGoods = computed(() => goodsOptions.value.find((item) => item.id === createForm.value.goodsId))
+  const selectedProduct = computed(() => productOptions.value.find((item) => item.id === createForm.value.productId))
 
   const statusLabel = (value) => {
     const item = statusOptions.find((option) => option.value === value)
@@ -257,26 +262,24 @@
 
   const statusTagType = (value) => {
     switch (value) {
-      case 'pending':
+      case 1:
         return 'warning'
-      case 'completed':
+      case 2:
         return 'success'
-      case 'cancelled':
+      case 3:
         return 'info'
-      case 'refunded':
-        return 'danger'
       default:
         return ''
     }
   }
 
   const formatMemberLabel = (item) => {
-    const label = item.realName || item.nickname || item.mobile
-    return `${label} · ${item.mobile || '未绑定手机号'}`
+    const label = item.name || item.phone || '-'
+    return `${label} · ${item.phone || '未填写手机号'}`
   }
 
   const getTableData = async () => {
-    const res = await getExchangeOrderList({
+    const res = await getRedemptionOrderList({
       page: page.value,
       pageSize: pageSize.value,
       ...searchInfo.value
@@ -315,20 +318,23 @@
     }
   }
 
-  const loadGoodsOptions = async (keyword = '') => {
-    const res = await getPointGoodsOptions({ keyword })
+  const loadProductOptions = async (keyword = '') => {
+    const res = await getPointProductOptions({ keyword })
     if (res.code === 0) {
-      goodsOptions.value = res.data.list || []
+      productOptions.value = res.data.list || []
     }
   }
 
   const openCreateDialog = async () => {
     createForm.value = {
       memberId: '',
-      goodsId: '',
+      productId: '',
+      quantity: 1,
+      receiverName: '',
+      receiverPhone: '',
       remark: ''
     }
-    await Promise.all([loadMemberOptions(), loadGoodsOptions()])
+    await Promise.all([loadMemberOptions(), loadProductOptions()])
     createDialogVisible.value = true
   }
 
@@ -336,13 +342,16 @@
     createDialogVisible.value = false
     createForm.value = {
       memberId: '',
-      goodsId: '',
+      productId: '',
+      quantity: 1,
+      receiverName: '',
+      receiverPhone: '',
       remark: ''
     }
   }
 
   const submitCreate = async () => {
-    const res = await createExchangeOrder(createForm.value)
+    const res = await createRedemptionOrder(createForm.value)
     if (res.code === 0) {
       ElMessage.success('兑换订单创建成功')
       closeCreateDialog()
@@ -351,7 +360,7 @@
   }
 
   const openDetailDialog = async (row) => {
-    const res = await findExchangeOrder({ id: row.id })
+    const res = await findRedemptionOrder({ id: row.id })
     if (res.code === 0) {
       detailData.value = res.data
       detailDialogVisible.value = true
@@ -360,20 +369,15 @@
 
   const handleOrderAction = async (row, action) => {
     const actionMap = {
-      verify: {
-        message: '确认核销该订单吗？',
-        request: verifyExchangeOrder,
-        success: '订单核销成功'
+      complete: {
+        message: '确认将该订单标记为已完成吗？',
+        request: completeRedemptionOrder,
+        success: '订单已完成'
       },
       cancel: {
         message: '确认取消该订单并退回积分吗？',
-        request: cancelExchangeOrder,
-        success: '订单取消成功'
-      },
-      refund: {
-        message: '确认退回积分并退款该订单吗？',
-        request: refundExchangeOrder,
-        success: '订单退款成功'
+        request: cancelRedemptionOrder,
+        success: '订单已取消'
       }
     }
     const config = actionMap[action]

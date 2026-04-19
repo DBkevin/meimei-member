@@ -6,18 +6,18 @@
           <el-input
             v-model="searchInfo.keyword"
             clearable
-            placeholder="会员 / 备注 / 订单号"
+            placeholder="会员 / 备注 / 操作人"
             style="width: 240px"
           />
         </el-form-item>
-        <el-form-item label="变动类型">
-          <el-select v-model="searchInfo.changeType" clearable style="width: 160px">
-            <el-option v-for="item in changeTypeOptions" :key="item.value" :label="item.label" :value="item.value" />
+        <el-form-item label="流水类型">
+          <el-select v-model="searchInfo.type" clearable style="width: 160px">
+            <el-option v-for="item in typeOptions" :key="item.value" :label="item.label" :value="item.value" />
           </el-select>
         </el-form-item>
         <el-form-item label="来源类型">
-          <el-select v-model="searchInfo.sourceType" clearable style="width: 180px">
-            <el-option v-for="item in sourceTypeOptions" :key="item.value" :label="item.label" :value="item.value" />
+          <el-select v-model="searchInfo.refType" clearable style="width: 200px">
+            <el-option v-for="item in refTypeOptions" :key="item.value" :label="item.label" :value="item.value" />
           </el-select>
         </el-form-item>
         <el-form-item>
@@ -36,27 +36,31 @@
         </el-table-column>
         <el-table-column align="left" label="会员" min-width="150">
           <template #default="scope">
-            {{ scope.row.member?.realName || scope.row.member?.nickname || '-' }}
+            {{ scope.row.member?.name || '-' }}
           </template>
         </el-table-column>
         <el-table-column align="left" label="手机号" min-width="120">
           <template #default="scope">
-            {{ scope.row.member?.mobile || '-' }}
+            {{ scope.row.member?.phone || '-' }}
           </template>
         </el-table-column>
-        <el-table-column align="left" label="变动类型" min-width="110">
+        <el-table-column align="left" label="流水类型" min-width="110">
           <template #default="scope">
-            <el-tag :type="tagTypeMap[scope.row.changeType] || ''">
-              {{ changeTypeLabel(scope.row.changeType) }}
+            <el-tag :type="tagTypeMap[scope.row.type] || ''">
+              {{ typeLabel(scope.row.type) }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column align="left" label="变动积分" min-width="100" prop="changePoints" />
-        <el-table-column align="left" label="变动前" min-width="90" prop="beforePoints" />
-        <el-table-column align="left" label="变动后" min-width="90" prop="afterPoints" />
-        <el-table-column align="left" label="来源类型" min-width="140" prop="sourceType" />
-        <el-table-column align="left" label="来源ID" min-width="100" prop="sourceId" />
-        <el-table-column align="left" label="操作人ID" min-width="100" prop="operatorId" />
+        <el-table-column align="left" label="积分数量" min-width="100" prop="points" />
+        <el-table-column align="left" label="变动前" min-width="90" prop="beforeBalance" />
+        <el-table-column align="left" label="变动后" min-width="90" prop="afterBalance" />
+        <el-table-column align="left" label="来源类型" min-width="170">
+          <template #default="scope">
+            {{ refTypeLabel(scope.row.refType) }}
+          </template>
+        </el-table-column>
+        <el-table-column align="left" label="来源ID" min-width="100" prop="refId" />
+        <el-table-column align="left" label="操作人" min-width="100" prop="operator" />
         <el-table-column align="left" label="备注" min-width="220" prop="remark" show-overflow-tooltip />
       </el-table>
 
@@ -76,44 +80,43 @@
 </template>
 
 <script setup>
-  import { getPointLogList } from '@/api/member'
+  import { getPointTransactionList } from '@/api/member'
   import { formatDate } from '@/utils/format'
   import { ref } from 'vue'
   import { useRoute } from 'vue-router'
 
   defineOptions({
-    name: 'PointLogPage'
+    name: 'PointTransactionPage'
   })
 
   const route = useRoute()
 
-  const changeTypeOptions = [
+  const typeOptions = [
     { label: '获得积分', value: 'earn' },
-    { label: '消耗积分', value: 'use' },
-    { label: '手工增加', value: 'adjust_add' },
-    { label: '手工扣减', value: 'adjust_sub' },
+    { label: '消耗积分', value: 'spend' },
+    { label: '手工调整', value: 'adjust' },
     { label: '退回积分', value: 'refund' }
   ]
 
-  const sourceTypeOptions = [
-    { label: '手工调整', value: 'manual' },
-    { label: '兑换订单', value: 'exchange_order' },
-    { label: '订单退回', value: 'exchange_order_void' }
+  const refTypeOptions = [
+    { label: '手工增加', value: 'manual_adjust_add' },
+    { label: '手工扣减', value: 'manual_adjust_sub' },
+    { label: '兑换订单', value: 'redemption_order' },
+    { label: '订单取消退回', value: 'redemption_order_cancel' }
   ]
 
   const tagTypeMap = {
     earn: 'success',
-    use: '',
-    adjust_add: 'success',
-    adjust_sub: 'warning',
-    refund: 'info'
+    spend: 'warning',
+    adjust: 'info',
+    refund: 'primary'
   }
 
   const searchInfo = ref({
     memberId: route.query.memberId || '',
     keyword: '',
-    changeType: '',
-    sourceType: ''
+    type: '',
+    refType: ''
   })
 
   const tableData = ref([])
@@ -121,13 +124,18 @@
   const pageSize = ref(10)
   const total = ref(0)
 
-  const changeTypeLabel = (value) => {
-    const item = changeTypeOptions.find((option) => option.value === value)
+  const typeLabel = (value) => {
+    const item = typeOptions.find((option) => option.value === value)
+    return item ? item.label : value || '-'
+  }
+
+  const refTypeLabel = (value) => {
+    const item = refTypeOptions.find((option) => option.value === value)
     return item ? item.label : value || '-'
   }
 
   const getTableData = async () => {
-    const res = await getPointLogList({
+    const res = await getPointTransactionList({
       page: page.value,
       pageSize: pageSize.value,
       ...searchInfo.value
@@ -144,8 +152,8 @@
     searchInfo.value = {
       memberId: route.query.memberId || '',
       keyword: '',
-      changeType: '',
-      sourceType: ''
+      type: '',
+      refType: ''
     }
     page.value = 1
     getTableData()

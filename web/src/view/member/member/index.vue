@@ -2,11 +2,14 @@
   <div>
     <div class="gva-search-box">
       <el-form :inline="true" :model="searchInfo">
-        <el-form-item label="手机号">
-          <el-input v-model="searchInfo.mobile" clearable placeholder="请输入手机号" />
+        <el-form-item label="关键词">
+          <el-input v-model="searchInfo.keyword" clearable placeholder="姓名 / 手机号 / 来源 / 备注" style="width: 240px" />
         </el-form-item>
-        <el-form-item label="昵称">
-          <el-input v-model="searchInfo.nickname" clearable placeholder="请输入昵称" />
+        <el-form-item label="姓名">
+          <el-input v-model="searchInfo.name" clearable placeholder="请输入会员姓名" />
+        </el-form-item>
+        <el-form-item label="手机号">
+          <el-input v-model="searchInfo.phone" clearable placeholder="请输入手机号" />
         </el-form-item>
         <el-form-item label="状态">
           <el-select v-model="searchInfo.status" clearable placeholder="全部状态" style="width: 140px">
@@ -31,27 +34,37 @@
             {{ formatDate(scope.row.createdAt) }}
           </template>
         </el-table-column>
-        <el-table-column align="left" label="手机号" min-width="120" prop="mobile" />
-        <el-table-column align="left" label="昵称" min-width="120" prop="nickname" />
-        <el-table-column align="left" label="真实姓名" min-width="120" prop="realName" />
-        <el-table-column align="left" label="会员等级" min-width="100" prop="memberLevel" />
+        <el-table-column align="left" label="会员姓名" min-width="120" prop="name" />
+        <el-table-column align="left" label="手机号" min-width="120" prop="phone" />
+        <el-table-column align="left" label="性别" min-width="90">
+          <template #default="scope">
+            {{ genderLabel(scope.row.gender) }}
+          </template>
+        </el-table-column>
+        <el-table-column align="left" label="生日" min-width="120">
+          <template #default="scope">
+            {{ scope.row.birthday ? formatDate(scope.row.birthday, 'yyyy-MM-dd') : '-' }}
+          </template>
+        </el-table-column>
+        <el-table-column align="left" label="来源渠道" min-width="120" prop="source" />
+        <el-table-column align="left" label="会员等级" min-width="100" prop="level" />
         <el-table-column align="left" label="状态" min-width="100">
           <template #default="scope">
-            <el-tag :type="scope.row.status === 'enabled' ? 'success' : 'danger'">
-              {{ scope.row.status === 'enabled' ? '启用' : '禁用' }}
+            <el-tag :type="scope.row.status === 1 ? 'success' : 'danger'">
+              {{ scope.row.status === 1 ? '启用' : '禁用' }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column align="left" label="OpenID" min-width="180" prop="openid" show-overflow-tooltip />
+        <el-table-column align="left" label="备注" min-width="180" prop="remark" show-overflow-tooltip />
         <el-table-column align="left" label="操作" min-width="280" fixed="right">
           <template #default="scope">
             <el-button link type="primary" icon="edit" @click="openEditDialog(scope.row)">编辑</el-button>
             <el-button
               link
-              :type="scope.row.status === 'enabled' ? 'warning' : 'success'"
+              :type="scope.row.status === 1 ? 'warning' : 'success'"
               @click="handleStatusChange(scope.row)"
             >
-              {{ scope.row.status === 'enabled' ? '禁用' : '启用' }}
+              {{ scope.row.status === 1 ? '禁用' : '启用' }}
             </el-button>
             <el-button link type="primary" icon="tickets" @click="showAccount(scope.row)">积分账户</el-button>
             <el-button link type="danger" icon="delete" @click="handleDelete(scope.row)">删除</el-button>
@@ -76,33 +89,41 @@
       <el-form label-width="100px" :model="formData">
         <el-row :gutter="16">
           <el-col :span="12">
-            <el-form-item label="OpenID">
-              <el-input v-model="formData.openid" clearable />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="UnionID">
-              <el-input v-model="formData.unionid" clearable />
+            <el-form-item label="会员姓名">
+              <el-input v-model="formData.name" clearable />
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item label="手机号">
-              <el-input v-model="formData.mobile" clearable />
+              <el-input v-model="formData.phone" clearable />
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="昵称">
-              <el-input v-model="formData.nickname" clearable />
+            <el-form-item label="性别">
+              <el-select v-model="formData.gender" clearable style="width: 100%">
+                <el-option v-for="item in genderOptions" :key="item.value" :label="item.label" :value="item.value" />
+              </el-select>
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="真实姓名">
-              <el-input v-model="formData.realName" clearable />
+            <el-form-item label="生日">
+              <el-date-picker
+                v-model="formData.birthday"
+                type="date"
+                value-format="YYYY-MM-DD"
+                placeholder="请选择生日"
+                style="width: 100%"
+              />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="来源渠道">
+              <el-input v-model="formData.source" clearable />
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item label="会员等级">
-              <el-select v-model="formData.memberLevel" style="width: 100%">
+              <el-select v-model="formData.level" style="width: 100%">
                 <el-option v-for="item in levelOptions" :key="item.value" :label="item.label" :value="item.value" />
               </el-select>
             </el-form-item>
@@ -115,8 +136,8 @@
             </el-form-item>
           </el-col>
           <el-col :span="24">
-            <el-form-item label="头像地址">
-              <el-input v-model="formData.avatarUrl" clearable placeholder="可直接填写图片 URL" />
+            <el-form-item label="备注">
+              <el-input v-model="formData.remark" :rows="4" type="textarea" />
             </el-form-item>
           </el-col>
         </el-row>
@@ -130,22 +151,22 @@
     <el-dialog v-model="accountDialogVisible" title="会员积分账户" width="520px">
       <el-descriptions :column="2" border>
         <el-descriptions-item label="会员">
-          {{ currentAccount.member?.realName || currentAccount.member?.nickname || currentAccount.member?.mobile || '-' }}
+          {{ currentAccount.member?.name || '-' }}
         </el-descriptions-item>
         <el-descriptions-item label="手机号">
-          {{ currentAccount.member?.mobile || '-' }}
+          {{ currentAccount.member?.phone || '-' }}
         </el-descriptions-item>
         <el-descriptions-item label="可用积分">
-          {{ currentAccount.availablePoints || 0 }}
+          {{ currentAccount.balance || 0 }}
         </el-descriptions-item>
         <el-descriptions-item label="冻结积分">
           {{ currentAccount.frozenPoints || 0 }}
         </el-descriptions-item>
         <el-descriptions-item label="累计获得">
-          {{ currentAccount.totalEarnedPoints || 0 }}
+          {{ currentAccount.totalEarned || 0 }}
         </el-descriptions-item>
-        <el-descriptions-item label="累计使用">
-          {{ currentAccount.totalUsedPoints || 0 }}
+        <el-descriptions-item label="累计消耗">
+          {{ currentAccount.totalSpent || 0 }}
         </el-descriptions-item>
       </el-descriptions>
     </el-dialog>
@@ -172,30 +193,37 @@
 
   const defaultForm = () => ({
     id: 0,
-    openid: '',
-    unionid: '',
-    mobile: '',
-    nickname: '',
-    avatarUrl: '',
-    realName: '',
-    memberLevel: 'standard',
-    status: 'enabled'
+    name: '',
+    phone: '',
+    gender: '',
+    birthday: '',
+    source: '',
+    level: 'standard',
+    status: 1,
+    remark: ''
   })
 
   const statusOptions = [
-    { label: '启用', value: 'enabled' },
-    { label: '禁用', value: 'disabled' }
+    { label: '启用', value: 1 },
+    { label: '禁用', value: 2 }
+  ]
+
+  const genderOptions = [
+    { label: '女', value: 'female' },
+    { label: '男', value: 'male' },
+    { label: '未知', value: 'unknown' }
   ]
 
   const levelOptions = [
     { label: '标准会员', value: 'standard' },
-    { label: '轻奢会员', value: 'premium' },
+    { label: '白金会员', value: 'premium' },
     { label: '黑金会员', value: 'vip' }
   ]
 
   const searchInfo = ref({
-    mobile: '',
-    nickname: '',
+    keyword: '',
+    name: '',
+    phone: '',
     status: ''
   })
   const tableData = ref([])
@@ -209,6 +237,11 @@
 
   const accountDialogVisible = ref(false)
   const currentAccount = ref({})
+
+  const genderLabel = (value) => {
+    const item = genderOptions.find((option) => option.value === value)
+    return item ? item.label : value || '-'
+  }
 
   const getTableData = async () => {
     const res = await getMemberList({
@@ -236,8 +269,9 @@
 
   const resetSearch = () => {
     searchInfo.value = {
-      mobile: '',
-      nickname: '',
+      keyword: '',
+      name: '',
+      phone: '',
       status: ''
     }
     page.value = 1
@@ -256,7 +290,8 @@
       dialogType.value = 'update'
       formData.value = {
         ...defaultForm(),
-        ...res.data.member
+        ...res.data.member,
+        birthday: res.data.member?.birthday ? res.data.member.birthday.slice(0, 10) : ''
       }
       dialogVisible.value = true
     }
@@ -278,8 +313,8 @@
   }
 
   const handleStatusChange = async (row) => {
-    const nextStatus = row.status === 'enabled' ? 'disabled' : 'enabled'
-    await ElMessageBox.confirm(`确定要${nextStatus === 'enabled' ? '启用' : '禁用'}该会员吗？`, '提示', {
+    const nextStatus = row.status === 1 ? 2 : 1
+    await ElMessageBox.confirm(`确定要${nextStatus === 1 ? '启用' : '禁用'}该会员吗？`, '提示', {
       type: 'warning'
     })
     const res = await updateMemberStatus({
@@ -293,7 +328,7 @@
   }
 
   const showAccount = async (row) => {
-    const res = await getMemberPointAccount({ id: row.id })
+    const res = await getMemberPointAccount({ memberId: row.id })
     if (res.code === 0) {
       currentAccount.value = res.data
       accountDialogVisible.value = true

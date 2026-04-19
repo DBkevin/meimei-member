@@ -8,10 +8,9 @@ type MemberDetail struct {
 }
 
 type MemberOption struct {
-	ID          uint   `json:"id"`
-	Label       string `json:"label"`
-	Mobile      string `json:"mobile"`
-	Nickname    string `json:"nickname"`
-	RealName    string `json:"realName"`
-	MemberLevel string `json:"memberLevel"`
+	ID    uint   `json:"id"`
+	Label string `json:"label"`
+	Name  string `json:"name"`
+	Phone string `json:"phone"`
+	Level string `json:"level"`
 }

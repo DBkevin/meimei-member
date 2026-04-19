@@ -15,6 +15,7 @@ func (r *PointAccountRouter) InitPointAccountRouter(Router *gin.RouterGroup) {
 		pointAccountRouter.POST("manualSubPoints", pointAccountApi.ManualSubPoints)
 	}
 	{
+		pointAccountRouterWithoutRecord.GET("findPointAccount", pointAccountApi.FindPointAccount)
 		pointAccountRouterWithoutRecord.GET("getPointAccountList", pointAccountApi.GetPointAccountList)
 	}
 }

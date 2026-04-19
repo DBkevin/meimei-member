@@ -5,19 +5,18 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type ExchangeOrderRouter struct{}
+type RedemptionOrderRouter struct{}
 
-func (r *ExchangeOrderRouter) InitExchangeOrderRouter(Router *gin.RouterGroup) {
-	exchangeOrderRouter := Router.Group("exchangeOrder").Use(middleware.OperationRecord())
-	exchangeOrderRouterWithoutRecord := Router.Group("exchangeOrder")
+func (r *RedemptionOrderRouter) InitRedemptionOrderRouter(Router *gin.RouterGroup) {
+	redemptionOrderRouter := Router.Group("redemptionOrder").Use(middleware.OperationRecord())
+	redemptionOrderRouterWithoutRecord := Router.Group("redemptionOrder")
 	{
-		exchangeOrderRouter.POST("createExchangeOrder", exchangeOrderApi.CreateExchangeOrder)
-		exchangeOrderRouter.POST("verifyExchangeOrder", exchangeOrderApi.VerifyExchangeOrder)
-		exchangeOrderRouter.POST("cancelExchangeOrder", exchangeOrderApi.CancelExchangeOrder)
-		exchangeOrderRouter.POST("refundExchangeOrder", exchangeOrderApi.RefundExchangeOrder)
+		redemptionOrderRouter.POST("createRedemptionOrder", redemptionOrderApi.CreateRedemptionOrder)
+		redemptionOrderRouter.POST("completeRedemptionOrder", redemptionOrderApi.CompleteRedemptionOrder)
+		redemptionOrderRouter.POST("cancelRedemptionOrder", redemptionOrderApi.CancelRedemptionOrder)
 	}
 	{
-		exchangeOrderRouterWithoutRecord.GET("findExchangeOrder", exchangeOrderApi.FindExchangeOrder)
-		exchangeOrderRouterWithoutRecord.GET("getExchangeOrderList", exchangeOrderApi.GetExchangeOrderList)
+		redemptionOrderRouterWithoutRecord.GET("findRedemptionOrder", redemptionOrderApi.FindRedemptionOrder)
+		redemptionOrderRouterWithoutRecord.GET("getRedemptionOrderList", redemptionOrderApi.GetRedemptionOrderList)
 	}
 }

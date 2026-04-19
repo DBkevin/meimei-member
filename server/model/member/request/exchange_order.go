@@ -1,22 +1,25 @@
 package request
 
-import "github.com/flipped-aurora/gin-vue-admin/server/model/common/request"
+import commonReq "github.com/flipped-aurora/gin-vue-admin/server/model/common/request"
 
-type ExchangeOrderSearch struct {
-	request.PageInfo
-	Keyword  string `json:"keyword" form:"keyword"`
-	MemberID uint   `json:"memberId" form:"memberId"`
-	GoodsID  uint   `json:"goodsId" form:"goodsId"`
-	Status   string `json:"status" form:"status"`
+type RedemptionOrderSearch struct {
+	commonReq.PageInfo
+	Keyword   string `json:"keyword" form:"keyword"`
+	MemberID  uint   `json:"memberId" form:"memberId"`
+	ProductID uint   `json:"productId" form:"productId"`
+	Status    int    `json:"status" form:"status"`
 }
 
-type CreateExchangeOrderReq struct {
-	MemberID uint   `json:"memberId" form:"memberId" binding:"required"`
-	GoodsID  uint   `json:"goodsId" form:"goodsId" binding:"required"`
-	Remark   string `json:"remark" form:"remark"`
+type CreateRedemptionOrderReq struct {
+	MemberID      uint   `json:"memberId" form:"memberId" binding:"required"`
+	ProductID     uint   `json:"productId" form:"productId" binding:"required"`
+	Quantity      int64  `json:"quantity" form:"quantity" binding:"required"`
+	ReceiverName  string `json:"receiverName" form:"receiverName"`
+	ReceiverPhone string `json:"receiverPhone" form:"receiverPhone"`
+	Remark        string `json:"remark" form:"remark"`
 }
 
-type OperateExchangeOrderReq struct {
+type OperateRedemptionOrderReq struct {
 	ID     uint   `json:"id" form:"id" binding:"required"`
 	Remark string `json:"remark" form:"remark"`
 }

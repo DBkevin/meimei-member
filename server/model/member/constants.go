@@ -1,24 +1,25 @@
 package member
 
 const (
-	MemberStatusEnabled  = "enabled"
-	MemberStatusDisabled = "disabled"
+	MemberLevelStandard = "standard"
 
-	PointChangeTypeEarn      = "earn"
-	PointChangeTypeUse       = "use"
-	PointChangeTypeAdjustAdd = "adjust_add"
-	PointChangeTypeAdjustSub = "adjust_sub"
-	PointChangeTypeRefund    = "refund"
+	MemberStatusEnabled  = 1
+	MemberStatusDisabled = 2
 
-	PointSourceTypeManual            = "manual"
-	PointSourceTypeExchangeOrder     = "exchange_order"
-	PointSourceTypeExchangeOrderVoid = "exchange_order_void"
+	PointTransactionTypeEarn   = "earn"
+	PointTransactionTypeSpend  = "spend"
+	PointTransactionTypeAdjust = "adjust"
+	PointTransactionTypeRefund = "refund"
 
-	GoodsStatusOnSale  = "on_sale"
-	GoodsStatusOffSale = "off_sale"
+	PointRefTypeManualAdjustAdd     = "manual_adjust_add"
+	PointRefTypeManualAdjustSub     = "manual_adjust_sub"
+	PointRefTypeRedemptionOrder     = "redemption_order"
+	PointRefTypeRedemptionOrderVoid = "redemption_order_cancel"
 
-	OrderStatusPending   = "pending"
-	OrderStatusCompleted = "completed"
-	OrderStatusCancelled = "cancelled"
-	OrderStatusRefunded  = "refunded"
+	PointProductStatusOnSale  = 1
+	PointProductStatusOffSale = 2
+
+	RedemptionOrderStatusPending   = 1
+	RedemptionOrderStatusCompleted = 2
+	RedemptionOrderStatusCancelled = 3
 )

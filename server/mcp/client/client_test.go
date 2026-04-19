@@ -3,26 +3,33 @@ package client
 import (
 	"context"
 	"fmt"
+	"os"
 	"github.com/mark3labs/mcp-go/mcp"
 	"testing"
 )
 
 // 测试 MCP 客户端连接
 func TestMcpClientConnection(t *testing.T) {
-	c, err := NewClient("http://localhost:8888/sse", "test-client", "1.0.0", "gin-vue-admin MCP服务")
-	defer c.Close()
-	if err != nil {
-		t.Fatalf(err.Error())
+	if os.Getenv("RUN_MCP_INTEGRATION_TESTS") != "1" {
+		t.Skip("skip MCP integration tests unless RUN_MCP_INTEGRATION_TESTS=1")
 	}
+	c, err := NewClient("http://localhost:8888/sse", "test-client", "1.0.0", "gin-vue-admin MCP服务")
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+	defer c.Close()
 }
 
 func TestTools(t *testing.T) {
+	if os.Getenv("RUN_MCP_INTEGRATION_TESTS") != "1" {
+		t.Skip("skip MCP integration tests unless RUN_MCP_INTEGRATION_TESTS=1")
+	}
 	t.Run("currentTime", func(t *testing.T) {
 		c, err := NewClient("http://localhost:8888/sse", "test-client", "1.0.0", "gin-vue-admin MCP服务")
-		defer c.Close()
 		if err != nil {
 			t.Fatalf("Failed to create client: %v", err)
 		}
+		defer c.Close()
 		ctx := context.Background()
 
 		request := mcp.CallToolRequest{}
@@ -49,10 +56,10 @@ func TestTools(t *testing.T) {
 	t.Run("getNickname", func(t *testing.T) {
 
 		c, err := NewClient("http://localhost:8888/sse", "test-client", "1.0.0", "gin-vue-admin MCP服务")
-		defer c.Close()
 		if err != nil {
 			t.Fatalf("Failed to create client: %v", err)
 		}
+		defer c.Close()
 		ctx := context.Background()
 
 		// Initialize
@@ -91,11 +98,14 @@ func TestTools(t *testing.T) {
 }
 
 func TestGetTools(t *testing.T) {
+	if os.Getenv("RUN_MCP_INTEGRATION_TESTS") != "1" {
+		t.Skip("skip MCP integration tests unless RUN_MCP_INTEGRATION_TESTS=1")
+	}
 	c, err := NewClient("http://localhost:8888/sse", "test-client", "1.0.0", "gin-vue-admin MCP服务")
-	defer c.Close()
 	if err != nil {
 		t.Fatalf("Failed to create client: %v", err)
 	}
+	defer c.Close()
 	ctx := context.Background()
 
 	toolsRequest := mcp.ListToolsRequest{}

@@ -2,135 +2,130 @@ package member
 
 import (
 	"github.com/flipped-aurora/gin-vue-admin/server/global"
-	"github.com/flipped-aurora/gin-vue-admin/server/model/common/request"
-	"github.com/flipped-aurora/gin-vue-admin/server/model/common/response"
-	memberModel "github.com/flipped-aurora/gin-vue-admin/server/model/member"
+	commonReq "github.com/flipped-aurora/gin-vue-admin/server/model/common/request"
+	commonRes "github.com/flipped-aurora/gin-vue-admin/server/model/common/response"
 	memberReq "github.com/flipped-aurora/gin-vue-admin/server/model/member/request"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )
 
-type PointGoodsApi struct{}
+type PointProductApi struct{}
 
-// CreatePointGoods
-// @Tags      PointGoods
+// CreatePointProduct
+// @Tags      PointProduct
 // @Summary   创建积分商品
 // @Security  ApiKeyAuth
 // @Accept    application/json
 // @Produce   application/json
-// @Param     data  body      memberModel.PointGoods       true  "积分商品信息"
-// @Success   200   {object}  response.Response{msg=string} "创建积分商品成功"
-// @Router    /pointGoods/createPointGoods [post]
-func (a *PointGoodsApi) CreatePointGoods(c *gin.Context) {
-	var goods memberModel.PointGoods
-	if err := c.ShouldBindJSON(&goods); err != nil {
-		response.FailWithMessage(err.Error(), c)
+// @Param     data  body      memberReq.CreatePointProductReq true  "积分商品信息"
+// @Success   200   {object}  commonRes.Response{msg=string}  "创建积分商品成功"
+// @Router    /pointProduct/createPointProduct [post]
+func (a *PointProductApi) CreatePointProduct(c *gin.Context) {
+	var req memberReq.CreatePointProductReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		commonRes.FailWithMessage(err.Error(), c)
 		return
 	}
-	if err := pointGoodsService.CreatePointGoods(&goods); err != nil {
+	if err := pointProductService.CreatePointProduct(req); err != nil {
 		global.GVA_LOG.Error("创建积分商品失败", zap.Error(err))
-		response.FailWithMessage("创建积分商品失败:"+err.Error(), c)
+		commonRes.FailWithMessage("创建积分商品失败:"+err.Error(), c)
 		return
 	}
-	response.OkWithMessage("创建积分商品成功", c)
+	commonRes.OkWithMessage("创建积分商品成功", c)
 }
 
-// DeletePointGoods
-// @Tags      PointGoods
+// DeletePointProduct
+// @Tags      PointProduct
 // @Summary   删除积分商品
 // @Security  ApiKeyAuth
 // @Accept    application/json
 // @Produce   application/json
-// @Param     data  body      request.GetById              true  "积分商品ID"
-// @Success   200   {object}  response.Response{msg=string} "删除积分商品成功"
-// @Router    /pointGoods/deletePointGoods [delete]
-func (a *PointGoodsApi) DeletePointGoods(c *gin.Context) {
-	var info request.GetById
+// @Param     data  body      commonReq.GetById             true  "积分商品ID"
+// @Success   200   {object}  commonRes.Response{msg=string} "删除积分商品成功"
+// @Router    /pointProduct/deletePointProduct [delete]
+func (a *PointProductApi) DeletePointProduct(c *gin.Context) {
+	var info commonReq.GetById
 	if err := c.ShouldBindJSON(&info); err != nil {
-		response.FailWithMessage(err.Error(), c)
+		commonRes.FailWithMessage(err.Error(), c)
 		return
 	}
-	if err := pointGoodsService.DeletePointGoods(info.Uint()); err != nil {
+	if err := pointProductService.DeletePointProduct(info.Uint()); err != nil {
 		global.GVA_LOG.Error("删除积分商品失败", zap.Error(err))
-		response.FailWithMessage("删除积分商品失败:"+err.Error(), c)
+		commonRes.FailWithMessage("删除积分商品失败:"+err.Error(), c)
 		return
 	}
-	response.OkWithMessage("删除积分商品成功", c)
+	commonRes.OkWithMessage("删除积分商品成功", c)
 }
 
-// UpdatePointGoods
-// @Tags      PointGoods
+// UpdatePointProduct
+// @Tags      PointProduct
 // @Summary   更新积分商品
 // @Security  ApiKeyAuth
 // @Accept    application/json
 // @Produce   application/json
-// @Param     data  body      memberModel.PointGoods       true  "积分商品信息"
-// @Success   200   {object}  response.Response{msg=string} "更新积分商品成功"
-// @Router    /pointGoods/updatePointGoods [put]
-func (a *PointGoodsApi) UpdatePointGoods(c *gin.Context) {
-	var goods memberModel.PointGoods
-	if err := c.ShouldBindJSON(&goods); err != nil {
-		response.FailWithMessage(err.Error(), c)
+// @Param     data  body      memberReq.UpdatePointProductReq true  "积分商品信息"
+// @Success   200   {object}  commonRes.Response{msg=string}  "更新积分商品成功"
+// @Router    /pointProduct/updatePointProduct [put]
+func (a *PointProductApi) UpdatePointProduct(c *gin.Context) {
+	var req memberReq.UpdatePointProductReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		commonRes.FailWithMessage(err.Error(), c)
 		return
 	}
-	if goods.ID == 0 {
-		response.FailWithMessage("商品ID不能为空", c)
-		return
-	}
-	if err := pointGoodsService.UpdatePointGoods(&goods); err != nil {
+	if err := pointProductService.UpdatePointProduct(req); err != nil {
 		global.GVA_LOG.Error("更新积分商品失败", zap.Error(err))
-		response.FailWithMessage("更新积分商品失败:"+err.Error(), c)
+		commonRes.FailWithMessage("更新积分商品失败:"+err.Error(), c)
 		return
 	}
-	response.OkWithMessage("更新积分商品成功", c)
+	commonRes.OkWithMessage("更新积分商品成功", c)
 }
 
-// FindPointGoods
-// @Tags      PointGoods
+// FindPointProduct
+// @Tags      PointProduct
 // @Summary   查询积分商品详情
 // @Security  ApiKeyAuth
 // @Accept    application/json
 // @Produce   application/json
-// @Param     id    query     int                        true  "积分商品ID"
-// @Success   200   {object}  response.Response          "查询积分商品成功"
-// @Router    /pointGoods/findPointGoods [get]
-func (a *PointGoodsApi) FindPointGoods(c *gin.Context) {
-	var info request.GetById
+// @Param     id    query     int                true  "积分商品ID"
+// @Success   200   {object}  commonRes.Response "查询积分商品成功"
+// @Router    /pointProduct/findPointProduct [get]
+func (a *PointProductApi) FindPointProduct(c *gin.Context) {
+	var info commonReq.GetById
 	if err := c.ShouldBindQuery(&info); err != nil {
-		response.FailWithMessage(err.Error(), c)
+		commonRes.FailWithMessage(err.Error(), c)
 		return
 	}
-	goods, err := pointGoodsService.GetPointGoods(info.Uint())
+	product, err := pointProductService.GetPointProduct(info.Uint())
 	if err != nil {
 		global.GVA_LOG.Error("查询积分商品失败", zap.Error(err))
-		response.FailWithMessage("查询积分商品失败:"+err.Error(), c)
+		commonRes.FailWithMessage("查询积分商品失败:"+err.Error(), c)
 		return
 	}
-	response.OkWithDetailed(goods, "查询积分商品成功", c)
+	commonRes.OkWithDetailed(product, "查询积分商品成功", c)
 }
 
-// GetPointGoodsList
-// @Tags      PointGoods
+// GetPointProductList
+// @Tags      PointProduct
 // @Summary   分页获取积分商品列表
 // @Security  ApiKeyAuth
 // @Accept    application/json
 // @Produce   application/json
-// @Param     data  query     memberReq.PointGoodsSearch   true  "分页与筛选条件"
-// @Success   200   {object}  response.Response{data=response.PageResult,msg=string} "获取积分商品列表成功"
-// @Router    /pointGoods/getPointGoodsList [get]
-func (a *PointGoodsApi) GetPointGoodsList(c *gin.Context) {
-	var pageInfo memberReq.PointGoodsSearch
+// @Param     data  query     memberReq.PointProductSearch true  "分页与筛选条件"
+// @Success   200   {object}  commonRes.Response{data=commonRes.PageResult,msg=string} "获取积分商品列表成功"
+// @Router    /pointProduct/getPointProductList [get]
+func (a *PointProductApi) GetPointProductList(c *gin.Context) {
+	var pageInfo memberReq.PointProductSearch
 	if err := c.ShouldBindQuery(&pageInfo); err != nil {
-		response.FailWithMessage(err.Error(), c)
+		commonRes.FailWithMessage(err.Error(), c)
 		return
 	}
-	list, total, err := pointGoodsService.GetPointGoodsList(pageInfo)
+	list, total, err := pointProductService.GetPointProductList(pageInfo)
 	if err != nil {
 		global.GVA_LOG.Error("获取积分商品列表失败", zap.Error(err))
-		response.FailWithMessage("获取积分商品列表失败:"+err.Error(), c)
+		commonRes.FailWithMessage("获取积分商品列表失败:"+err.Error(), c)
 		return
 	}
-	response.OkWithDetailed(response.PageResult{
+	commonRes.OkWithDetailed(commonRes.PageResult{
 		List:     list,
 		Total:    total,
 		Page:     pageInfo.Page,
@@ -138,67 +133,44 @@ func (a *PointGoodsApi) GetPointGoodsList(c *gin.Context) {
 	}, "获取积分商品列表成功", c)
 }
 
-// UpdatePointGoodsStatus
-// @Tags      PointGoods
+// UpdatePointProductStatus
+// @Tags      PointProduct
 // @Summary   更新积分商品状态
 // @Security  ApiKeyAuth
 // @Accept    application/json
 // @Produce   application/json
-// @Param     data  body      memberReq.UpdateGoodsStatusReq true  "积分商品ID与状态"
-// @Success   200   {object}  response.Response{msg=string} "更新积分商品状态成功"
-// @Router    /pointGoods/updatePointGoodsStatus [put]
-func (a *PointGoodsApi) UpdatePointGoodsStatus(c *gin.Context) {
-	var req memberReq.UpdateGoodsStatusReq
+// @Param     data  body      memberReq.UpdatePointProductStatusReq true  "积分商品ID与状态"
+// @Success   200   {object}  commonRes.Response{msg=string} "更新积分商品状态成功"
+// @Router    /pointProduct/updatePointProductStatus [put]
+func (a *PointProductApi) UpdatePointProductStatus(c *gin.Context) {
+	var req memberReq.UpdatePointProductStatusReq
 	if err := c.ShouldBindJSON(&req); err != nil {
-		response.FailWithMessage(err.Error(), c)
+		commonRes.FailWithMessage(err.Error(), c)
 		return
 	}
-	if err := pointGoodsService.UpdatePointGoodsStatus(req); err != nil {
+	if err := pointProductService.UpdatePointProductStatus(req); err != nil {
 		global.GVA_LOG.Error("更新积分商品状态失败", zap.Error(err))
-		response.FailWithMessage("更新积分商品状态失败:"+err.Error(), c)
+		commonRes.FailWithMessage("更新积分商品状态失败:"+err.Error(), c)
 		return
 	}
-	response.OkWithMessage("更新积分商品状态成功", c)
+	commonRes.OkWithMessage("更新积分商品状态成功", c)
 }
 
-// UpdatePointGoodsStock
-// @Tags      PointGoods
-// @Summary   更新积分商品库存
-// @Security  ApiKeyAuth
-// @Accept    application/json
-// @Produce   application/json
-// @Param     data  body      memberReq.UpdateGoodsStockReq true  "积分商品ID与库存"
-// @Success   200   {object}  response.Response{msg=string} "更新积分商品库存成功"
-// @Router    /pointGoods/updatePointGoodsStock [put]
-func (a *PointGoodsApi) UpdatePointGoodsStock(c *gin.Context) {
-	var req memberReq.UpdateGoodsStockReq
-	if err := c.ShouldBindJSON(&req); err != nil {
-		response.FailWithMessage(err.Error(), c)
-		return
-	}
-	if err := pointGoodsService.UpdatePointGoodsStock(req); err != nil {
-		global.GVA_LOG.Error("更新积分商品库存失败", zap.Error(err))
-		response.FailWithMessage("更新积分商品库存失败:"+err.Error(), c)
-		return
-	}
-	response.OkWithMessage("更新积分商品库存成功", c)
-}
-
-// GetPointGoodsOptions
-// @Tags      PointGoods
+// GetPointProductOptions
+// @Tags      PointProduct
 // @Summary   获取积分商品选项
 // @Security  ApiKeyAuth
 // @Accept    application/json
 // @Produce   application/json
-// @Param     keyword  query     string                     false  "关键字"
-// @Success   200      {object}  response.Response          "获取积分商品选项成功"
-// @Router    /pointGoods/getPointGoodsOptions [get]
-func (a *PointGoodsApi) GetPointGoodsOptions(c *gin.Context) {
-	list, err := pointGoodsService.GetPointGoodsOptions(c.Query("keyword"))
+// @Param     keyword  query     string             false  "关键字"
+// @Success   200      {object}  commonRes.Response "获取积分商品选项成功"
+// @Router    /pointProduct/getPointProductOptions [get]
+func (a *PointProductApi) GetPointProductOptions(c *gin.Context) {
+	list, err := pointProductService.GetPointProductOptions(c.Query("keyword"))
 	if err != nil {
 		global.GVA_LOG.Error("获取积分商品选项失败", zap.Error(err))
-		response.FailWithMessage("获取积分商品选项失败:"+err.Error(), c)
+		commonRes.FailWithMessage("获取积分商品选项失败:"+err.Error(), c)
 		return
 	}
-	response.OkWithData(gin.H{"list": list}, c)
+	commonRes.OkWithData(gin.H{"list": list}, c)
 }

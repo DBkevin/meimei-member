@@ -11,9 +11,7 @@ server {
     server_name your-domain.com;
 
     # Replace certificate paths with your real certificate files.
-    ssl_certificate      /etc/nginx/ssl/your-domain.com.pem;
-    ssl_certificate_key  /etc/nginx/ssl/your-domain.com.key;
-
+  
     root /opt/meimei-member/web/dist;
     index index.html;
 

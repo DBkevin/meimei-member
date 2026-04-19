@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -12,6 +13,20 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
+
+const (
+	pointActionEarn      = "earn"
+	pointActionSpend     = "spend"
+	pointActionAdjustAdd = "adjust_add"
+	pointActionAdjustSub = "adjust_sub"
+	pointActionRefund    = "refund"
+)
+
+type pointChangeResult struct {
+	Account       memberModel.PointAccount
+	BeforeBalance int64
+	AfterBalance  int64
+}
 
 func mergeRemark(origin, extra string) string {
 	origin = strings.TrimSpace(origin)
@@ -26,12 +41,15 @@ func mergeRemark(origin, extra string) string {
 	}
 }
 
-func buildOrderNo() string {
-	return fmt.Sprintf("ME%s%04d", time.Now().Format("20060102150405"), randomNumber(10000))
+func formatOperator(operatorID uint) string {
+	if operatorID == 0 {
+		return ""
+	}
+	return strconv.FormatUint(uint64(operatorID), 10)
 }
 
-func buildVerifyCode() string {
-	return fmt.Sprintf("%06d", randomNumber(1000000))
+func buildOrderNo() string {
+	return fmt.Sprintf("ME%s%04d", time.Now().Format("20060102150405"), randomNumber(10000))
 }
 
 func randomNumber(max int64) int64 {
@@ -71,6 +89,9 @@ func getOrCreateAccountForUpdate(tx *gorm.DB, memberID uint) (memberModel.PointA
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		account = memberModel.PointAccount{MemberID: memberID}
 		if err = tx.Create(&account).Error; err != nil {
+			if retryErr := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where("member_id = ?", memberID).First(&account).Error; retryErr == nil {
+				return account, nil
+			}
 			return account, err
 		}
 		err = tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where("id = ?", account.ID).First(&account).Error
@@ -78,70 +99,90 @@ func getOrCreateAccountForUpdate(tx *gorm.DB, memberID uint) (memberModel.PointA
 	return account, err
 }
 
-func adjustPoints(tx *gorm.DB, memberID uint, changeType string, points int64, sourceType string, sourceID uint, remark string, operatorID uint) (memberModel.PointAccount, error) {
-	var account memberModel.PointAccount
+func applyPointChange(tx *gorm.DB, memberID uint, action string, points int64) (pointChangeResult, error) {
+	var result pointChangeResult
 	if points <= 0 {
-		return account, errors.New("积分必须大于0")
+		return result, errors.New("积分必须大于0")
 	}
 	account, err := getOrCreateAccountForUpdate(tx, memberID)
 	if err != nil {
-		return account, err
+		return result, err
 	}
 
-	before := account.AvailablePoints
+	before := account.Balance
 	after := before
-	earned := account.TotalEarnedPoints
-	used := account.TotalUsedPoints
+	earned := account.TotalEarned
+	spent := account.TotalSpent
 
-	switch changeType {
-	case memberModel.PointChangeTypeEarn, memberModel.PointChangeTypeAdjustAdd:
+	switch action {
+	case pointActionEarn, pointActionAdjustAdd:
 		after += points
 		earned += points
-	case memberModel.PointChangeTypeUse, memberModel.PointChangeTypeAdjustSub:
+	case pointActionSpend, pointActionAdjustSub:
 		if before < points {
-			return account, errors.New("会员可用积分不足")
+			return result, errors.New("会员积分余额不足")
 		}
 		after -= points
-		used += points
-	case memberModel.PointChangeTypeRefund:
+		spent += points
+	case pointActionRefund:
 		after += points
-		if used >= points {
-			used -= points
-		} else {
-			used = 0
-		}
 	default:
-		return account, errors.New("不支持的积分变动类型")
+		return result, errors.New("不支持的积分变动类型")
 	}
 
 	updates := map[string]interface{}{
-		"available_points":    after,
-		"total_earned_points": earned,
-		"total_used_points":   used,
+		"balance":       after,
+		"total_earned":  earned,
+		"total_spent":   spent,
+		"frozen_points": account.FrozenPoints,
 	}
-	if err = tx.Model(&memberModel.PointAccount{}).Where("id = ?", account.ID).Updates(updates).Error; err != nil {
-		return account, err
+	updateResult := tx.Model(&memberModel.PointAccount{}).Where("id = ?", account.ID).Updates(updates)
+	if updateResult.Error != nil {
+		return result, updateResult.Error
 	}
-	account.AvailablePoints = after
-	account.TotalEarnedPoints = earned
-	account.TotalUsedPoints = used
+	if updateResult.RowsAffected != 1 {
+		return result, errors.New("更新积分账户失败")
+	}
+	account.Balance = after
+	account.TotalEarned = earned
+	account.TotalSpent = spent
+	result = pointChangeResult{
+		Account:       account,
+		BeforeBalance: before,
+		AfterBalance:  after,
+	}
+	return result, nil
+}
 
-	pointLog := memberModel.PointLog{
-		MemberID:     memberID,
-		ChangeType:   changeType,
-		ChangePoints: points,
-		BeforePoints: before,
-		AfterPoints:  after,
-		SourceType:   sourceType,
-		SourceID:     sourceID,
-		Remark:       remark,
-		OperatorID:   operatorID,
+func actionToTransactionType(action string) string {
+	switch action {
+	case pointActionEarn:
+		return memberModel.PointTransactionTypeEarn
+	case pointActionSpend:
+		return memberModel.PointTransactionTypeSpend
+	case pointActionAdjustAdd, pointActionAdjustSub:
+		return memberModel.PointTransactionTypeAdjust
+	case pointActionRefund:
+		return memberModel.PointTransactionTypeRefund
+	default:
+		return memberModel.PointTransactionTypeAdjust
 	}
-	if err = tx.Create(&pointLog).Error; err != nil {
-		return account, err
-	}
+}
 
-	return account, nil
+func recordPointTransaction(tx *gorm.DB, memberID uint, accountID uint, action string, points int64, beforeBalance int64, afterBalance int64, refType string, refID uint, operator string, remark string) error {
+	transaction := memberModel.PointTransaction{
+		MemberID:      memberID,
+		AccountID:     accountID,
+		Type:          actionToTransactionType(action),
+		Points:        points,
+		BeforeBalance: beforeBalance,
+		AfterBalance:  afterBalance,
+		RefType:       refType,
+		RefID:         refID,
+		Operator:      strings.TrimSpace(operator),
+		Remark:        strings.TrimSpace(remark),
+	}
+	return tx.Create(&transaction).Error
 }
 
 func bizDB() *gorm.DB {

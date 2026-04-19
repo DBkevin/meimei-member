@@ -3,8 +3,8 @@ package member
 import (
 	"errors"
 	"strings"
+	"time"
 
-	"github.com/flipped-aurora/gin-vue-admin/server/global"
 	memberModel "github.com/flipped-aurora/gin-vue-admin/server/model/member"
 	memberReq "github.com/flipped-aurora/gin-vue-admin/server/model/member/request"
 	memberRes "github.com/flipped-aurora/gin-vue-admin/server/model/member/response"
@@ -13,42 +13,39 @@ import (
 
 type MemberService struct{}
 
-func (s *MemberService) CreateMember(info *memberModel.Member) error {
-	info.OpenID = strings.TrimSpace(info.OpenID)
-	info.UnionID = strings.TrimSpace(info.UnionID)
-	info.Mobile = strings.TrimSpace(info.Mobile)
-	info.Nickname = strings.TrimSpace(info.Nickname)
-	info.RealName = strings.TrimSpace(info.RealName)
-	info.AvatarURL = strings.TrimSpace(info.AvatarURL)
-	if info.MemberLevel == "" {
-		info.MemberLevel = "standard"
+func (s *MemberService) CreateMember(req memberReq.CreateMemberReq) error {
+	member, err := s.buildMember(req.MemberBaseInput)
+	if err != nil {
+		return err
 	}
-	if info.Status == "" {
-		info.Status = memberModel.MemberStatusEnabled
-	}
-	return global.GVA_DB.Transaction(func(tx *gorm.DB) error {
-		if err := s.ensureMemberUnique(tx, info.OpenID, info.Mobile, 0); err != nil {
+
+	return bizDB().Transaction(func(tx *gorm.DB) error {
+		if err = s.ensurePhoneUnique(tx, member.Phone, 0); err != nil {
 			return err
 		}
-		if err := tx.Create(info).Error; err != nil {
+		if err = tx.Create(&member).Error; err != nil {
 			return err
 		}
-		return tx.Create(&memberModel.PointAccount{MemberID: info.ID}).Error
+		return tx.Create(&memberModel.PointAccount{MemberID: member.ID}).Error
 	})
 }
 
 func (s *MemberService) DeleteMember(id uint) error {
-	return global.GVA_DB.Transaction(func(tx *gorm.DB) error {
-		var flowCount int64
-		if err := tx.Model(&memberModel.PointLog{}).Where("member_id = ?", id).Count(&flowCount).Error; err != nil {
+	return bizDB().Transaction(func(tx *gorm.DB) error {
+		if _, err := loadMember(tx, id); err != nil {
 			return err
 		}
-		if flowCount > 0 {
+
+		var transactionCount int64
+		if err := tx.Model(&memberModel.PointTransaction{}).Where("member_id = ?", id).Count(&transactionCount).Error; err != nil {
+			return err
+		}
+		if transactionCount > 0 {
 			return errors.New("会员已有积分流水，无法删除")
 		}
 
 		var orderCount int64
-		if err := tx.Model(&memberModel.ExchangeOrder{}).Where("member_id = ?", id).Count(&orderCount).Error; err != nil {
+		if err := tx.Model(&memberModel.RedemptionOrder{}).Where("member_id = ?", id).Count(&orderCount).Error; err != nil {
 			return err
 		}
 		if orderCount > 0 {
@@ -62,58 +59,73 @@ func (s *MemberService) DeleteMember(id uint) error {
 	})
 }
 
-func (s *MemberService) UpdateMember(info *memberModel.Member) error {
-	info.OpenID = strings.TrimSpace(info.OpenID)
-	info.UnionID = strings.TrimSpace(info.UnionID)
-	info.Mobile = strings.TrimSpace(info.Mobile)
-	info.Nickname = strings.TrimSpace(info.Nickname)
-	info.RealName = strings.TrimSpace(info.RealName)
-	info.AvatarURL = strings.TrimSpace(info.AvatarURL)
-	return global.GVA_DB.Transaction(func(tx *gorm.DB) error {
-		if err := s.ensureMemberUnique(tx, info.OpenID, info.Mobile, info.ID); err != nil {
+func (s *MemberService) UpdateMember(req memberReq.UpdateMemberReq) error {
+	member, err := s.buildMember(req.MemberBaseInput)
+	if err != nil {
+		return err
+	}
+	member.ID = req.ID
+
+	return bizDB().Transaction(func(tx *gorm.DB) error {
+		if _, err = loadMember(tx, req.ID); err != nil {
+			return err
+		}
+		if err = s.ensurePhoneUnique(tx, member.Phone, req.ID); err != nil {
 			return err
 		}
 		updates := map[string]interface{}{
-			"openid":       info.OpenID,
-			"unionid":      info.UnionID,
-			"mobile":       info.Mobile,
-			"nickname":     info.Nickname,
-			"avatar_url":   info.AvatarURL,
-			"real_name":    info.RealName,
-			"member_level": info.MemberLevel,
-			"status":       info.Status,
+			"name":     member.Name,
+			"phone":    member.Phone,
+			"gender":   member.Gender,
+			"birthday": member.Birthday,
+			"source":   member.Source,
+			"level":    member.Level,
+			"status":   member.Status,
+			"remark":   member.Remark,
 		}
-		return tx.Model(&memberModel.Member{}).Where("id = ?", info.ID).Updates(updates).Error
+		return tx.Model(&memberModel.Member{}).Where("id = ?", req.ID).Updates(updates).Error
 	})
 }
 
 func (s *MemberService) GetMember(id uint) (memberRes.MemberDetail, error) {
 	var result memberRes.MemberDetail
-	err := global.GVA_DB.Where("id = ?", id).First(&result.Member).Error
+	member, err := s.getMemberEntity(id)
 	if err != nil {
 		return result, err
 	}
-	_ = global.GVA_DB.Where("member_id = ?", id).First(&result.Account).Error
+
+	account, err := (&PointAccountService{}).GetPointAccountByMemberID(id)
+	if err != nil {
+		return result, err
+	}
+
+	result.Member = member
+	result.Account = account
 	return result, nil
 }
 
 func (s *MemberService) GetMemberList(info memberReq.MemberSearch) (list []memberModel.Member, total int64, err error) {
-	db := global.GVA_DB.Model(&memberModel.Member{})
-	if info.Mobile != "" {
-		db = db.Where("mobile LIKE ?", "%"+strings.TrimSpace(info.Mobile)+"%")
+	db := bizDB().Model(&memberModel.Member{})
+	if keyword := strings.TrimSpace(info.Keyword); keyword != "" {
+		db = db.Where("name LIKE ? OR phone LIKE ? OR source LIKE ? OR remark LIKE ?",
+			"%"+keyword+"%", "%"+keyword+"%", "%"+keyword+"%", "%"+keyword+"%")
 	}
-	if info.Nickname != "" {
-		db = db.Where("nickname LIKE ?", "%"+strings.TrimSpace(info.Nickname)+"%")
+	if name := strings.TrimSpace(info.Name); name != "" {
+		db = db.Where("name LIKE ?", "%"+name+"%")
 	}
-	if info.RealName != "" {
-		db = db.Where("real_name LIKE ?", "%"+strings.TrimSpace(info.RealName)+"%")
+	if phone := strings.TrimSpace(info.Phone); phone != "" {
+		db = db.Where("phone LIKE ?", "%"+phone+"%")
 	}
-	if info.MemberLevel != "" {
-		db = db.Where("member_level = ?", info.MemberLevel)
+	if source := strings.TrimSpace(info.Source); source != "" {
+		db = db.Where("source = ?", source)
 	}
-	if info.Status != "" {
+	if level := strings.TrimSpace(info.Level); level != "" {
+		db = db.Where("level = ?", level)
+	}
+	if info.Status > 0 {
 		db = db.Where("status = ?", info.Status)
 	}
+
 	err = db.Count(&total).Error
 	if err != nil {
 		return
@@ -123,69 +135,103 @@ func (s *MemberService) GetMemberList(info memberReq.MemberSearch) (list []membe
 }
 
 func (s *MemberService) UpdateMemberStatus(req memberReq.UpdateMemberStatusReq) error {
-	if req.Status != memberModel.MemberStatusEnabled && req.Status != memberModel.MemberStatusDisabled {
+	if !s.isValidStatus(req.Status) {
 		return errors.New("会员状态不合法")
 	}
-	return global.GVA_DB.Model(&memberModel.Member{}).Where("id = ?", req.ID).Update("status", req.Status).Error
+	result := bizDB().Model(&memberModel.Member{}).Where("id = ?", req.ID).Update("status", req.Status)
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected != 1 {
+		return errors.New("会员不存在")
+	}
+	return nil
 }
 
 func (s *MemberService) GetMemberOptions(keyword string) (list []memberRes.MemberOption, err error) {
-	db := global.GVA_DB.Model(&memberModel.Member{}).Where("status = ?", memberModel.MemberStatusEnabled)
+	db := bizDB().Model(&memberModel.Member{}).Where("status = ?", memberModel.MemberStatusEnabled)
 	keyword = strings.TrimSpace(keyword)
 	if keyword != "" {
-		db = db.Where("mobile LIKE ? OR nickname LIKE ? OR real_name LIKE ?", "%"+keyword+"%", "%"+keyword+"%", "%"+keyword+"%")
+		db = db.Where("name LIKE ? OR phone LIKE ?", "%"+keyword+"%", "%"+keyword+"%")
 	}
+
 	var members []memberModel.Member
-	err = db.Order("created_at desc").Limit(50).Find(&members).Error
-	if err != nil {
-		return
+	if err = db.Order("created_at desc").Limit(50).Find(&members).Error; err != nil {
+		return nil, err
 	}
+
 	list = make([]memberRes.MemberOption, 0, len(members))
 	for _, item := range members {
-		label := item.Mobile
-		if item.RealName != "" {
-			label = item.RealName
-		} else if item.Nickname != "" {
-			label = item.Nickname
+		label := item.Name
+		if label == "" {
+			label = item.Phone
 		}
 		list = append(list, memberRes.MemberOption{
-			ID:          item.ID,
-			Label:       label,
-			Mobile:      item.Mobile,
-			Nickname:    item.Nickname,
-			RealName:    item.RealName,
-			MemberLevel: item.MemberLevel,
+			ID:    item.ID,
+			Label: label,
+			Name:  item.Name,
+			Phone: item.Phone,
+			Level: item.Level,
 		})
 	}
-	return
+	return list, nil
 }
 
-func (s *MemberService) ensureMemberUnique(tx *gorm.DB, openID, mobile string, excludeID uint) error {
-	if openID != "" {
-		var count int64
-		db := tx.Model(&memberModel.Member{}).Where("openid = ?", openID)
-		if excludeID > 0 {
-			db = db.Where("id <> ?", excludeID)
-		}
-		if err := db.Count(&count).Error; err != nil {
-			return err
-		}
-		if count > 0 {
-			return errors.New("openid 已存在")
-		}
+func (s *MemberService) getMemberEntity(id uint) (memberModel.Member, error) {
+	return loadMember(bizDB(), id)
+}
+
+func (s *MemberService) buildMember(input memberReq.MemberBaseInput) (memberModel.Member, error) {
+	member := memberModel.Member{
+		Name:   strings.TrimSpace(input.Name),
+		Phone:  strings.TrimSpace(input.Phone),
+		Gender: strings.TrimSpace(input.Gender),
+		Source: strings.TrimSpace(input.Source),
+		Level:  strings.TrimSpace(input.Level),
+		Remark: strings.TrimSpace(input.Remark),
 	}
-	if mobile != "" {
-		var count int64
-		db := tx.Model(&memberModel.Member{}).Where("mobile = ?", mobile)
-		if excludeID > 0 {
-			db = db.Where("id <> ?", excludeID)
+	if member.Level == "" {
+		member.Level = memberModel.MemberLevelStandard
+	}
+	if input.Status == 0 {
+		member.Status = memberModel.MemberStatusEnabled
+	} else {
+		member.Status = input.Status
+	}
+	if !s.isValidStatus(member.Status) {
+		return member, errors.New("会员状态不合法")
+	}
+	if member.Name == "" {
+		return member, errors.New("会员姓名不能为空")
+	}
+	if member.Phone == "" {
+		return member, errors.New("手机号不能为空")
+	}
+	if input.Birthday != "" {
+		birthday, err := time.ParseInLocation("2006-01-02", strings.TrimSpace(input.Birthday), time.Local)
+		if err != nil {
+			return member, errors.New("生日格式不正确，请使用 YYYY-MM-DD")
 		}
-		if err := db.Count(&count).Error; err != nil {
-			return err
-		}
-		if count > 0 {
-			return errors.New("手机号已存在")
-		}
+		member.Birthday = &birthday
+	}
+	return member, nil
+}
+
+func (s *MemberService) ensurePhoneUnique(tx *gorm.DB, phone string, excludeID uint) error {
+	var count int64
+	db := tx.Model(&memberModel.Member{}).Where("phone = ?", phone)
+	if excludeID > 0 {
+		db = db.Where("id <> ?", excludeID)
+	}
+	if err := db.Count(&count).Error; err != nil {
+		return err
+	}
+	if count > 0 {
+		return errors.New("手机号已存在")
 	}
 	return nil
+}
+
+func (s *MemberService) isValidStatus(status int) bool {
+	return status == memberModel.MemberStatusEnabled || status == memberModel.MemberStatusDisabled
 }

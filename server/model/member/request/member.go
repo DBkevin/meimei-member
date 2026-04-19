@@ -1,19 +1,40 @@
 package request
 
-import "github.com/flipped-aurora/gin-vue-admin/server/model/common/request"
+import commonReq "github.com/flipped-aurora/gin-vue-admin/server/model/common/request"
+
+type MemberBaseInput struct {
+	Name     string `json:"name" form:"name" binding:"required"`
+	Phone    string `json:"phone" form:"phone" binding:"required"`
+	Gender   string `json:"gender" form:"gender"`
+	Birthday string `json:"birthday" form:"birthday"`
+	Source   string `json:"source" form:"source"`
+	Level    string `json:"level" form:"level"`
+	Status   int    `json:"status" form:"status"`
+	Remark   string `json:"remark" form:"remark"`
+}
+
+type CreateMemberReq struct {
+	MemberBaseInput
+}
+
+type UpdateMemberReq struct {
+	ID uint `json:"id" form:"id" binding:"required"`
+	MemberBaseInput
+}
 
 type MemberSearch struct {
-	request.PageInfo
-	Mobile      string `json:"mobile" form:"mobile"`
-	Nickname    string `json:"nickname" form:"nickname"`
-	RealName    string `json:"realName" form:"realName"`
-	MemberLevel string `json:"memberLevel" form:"memberLevel"`
-	Status      string `json:"status" form:"status"`
+	commonReq.PageInfo
+	Keyword string `json:"keyword" form:"keyword"`
+	Name    string `json:"name" form:"name"`
+	Phone   string `json:"phone" form:"phone"`
+	Source  string `json:"source" form:"source"`
+	Level   string `json:"level" form:"level"`
+	Status  int    `json:"status" form:"status"`
 }
 
 type UpdateMemberStatusReq struct {
-	ID     uint   `json:"id" form:"id" binding:"required"`
-	Status string `json:"status" form:"status" binding:"required"`
+	ID     uint `json:"id" form:"id" binding:"required"`
+	Status int  `json:"status" form:"status" binding:"required"`
 }
 
 type MemberOptionsReq struct {

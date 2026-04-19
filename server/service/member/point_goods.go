@@ -8,123 +8,139 @@ import (
 	memberReq "github.com/flipped-aurora/gin-vue-admin/server/model/member/request"
 )
 
-type PointGoodsService struct{}
+type PointProductService struct{}
 
-func (s *PointGoodsService) CreatePointGoods(info *memberModel.PointGoods) error {
-	s.normalizeGoods(info)
-	if err := s.validatePointGoods(info); err != nil {
+func (s *PointProductService) CreatePointProduct(req memberReq.CreatePointProductReq) error {
+	product := s.buildPointProduct(req.PointProductBaseInput)
+	if err := s.validatePointProduct(product); err != nil {
 		return err
 	}
-	return bizDB().Create(info).Error
+	return bizDB().Create(&product).Error
 }
 
-func (s *PointGoodsService) DeletePointGoods(id uint) error {
+func (s *PointProductService) DeletePointProduct(id uint) error {
 	var count int64
-	if err := bizDB().Model(&memberModel.ExchangeOrder{}).Where("goods_id = ?", id).Count(&count).Error; err != nil {
+	if err := bizDB().Model(&memberModel.RedemptionOrder{}).Where("product_id = ?", id).Count(&count).Error; err != nil {
 		return err
 	}
 	if count > 0 {
 		return errors.New("商品已有兑换订单，无法删除")
 	}
-	return bizDB().Delete(&memberModel.PointGoods{}, "id = ?", id).Error
+	return bizDB().Delete(&memberModel.PointProduct{}, "id = ?", id).Error
 }
 
-func (s *PointGoodsService) UpdatePointGoods(info *memberModel.PointGoods) error {
-	s.normalizeGoods(info)
-	if err := s.validatePointGoods(info); err != nil {
+func (s *PointProductService) UpdatePointProduct(req memberReq.UpdatePointProductReq) error {
+	product := s.buildPointProduct(req.PointProductBaseInput)
+	product.ID = req.ID
+	if err := s.validatePointProduct(product); err != nil {
 		return err
 	}
-	updates := map[string]interface{}{
-		"name":             info.Name,
-		"cover_image":      info.CoverImage,
-		"description":      info.Description,
-		"points_price":     info.PointsPrice,
-		"stock":            info.Stock,
-		"limit_per_member": info.LimitPerMember,
-		"status":           info.Status,
-		"sort":             info.Sort,
+
+	result := bizDB().Model(&memberModel.PointProduct{}).Where("id = ?", req.ID).Updates(map[string]interface{}{
+		"name":         product.Name,
+		"cover_url":    product.CoverURL,
+		"category":     product.Category,
+		"points_price": product.PointsPrice,
+		"stock":        product.Stock,
+		"status":       product.Status,
+		"sort":         product.Sort,
+		"description":  product.Description,
+	})
+	if result.Error != nil {
+		return result.Error
 	}
-	return bizDB().Model(&memberModel.PointGoods{}).Where("id = ?", info.ID).Updates(updates).Error
+	if result.RowsAffected != 1 {
+		return errors.New("积分商品不存在")
+	}
+	return nil
 }
 
-func (s *PointGoodsService) GetPointGoods(id uint) (goods memberModel.PointGoods, err error) {
-	err = bizDB().Where("id = ?", id).First(&goods).Error
+func (s *PointProductService) GetPointProduct(id uint) (product memberModel.PointProduct, err error) {
+	err = bizDB().Where("id = ?", id).First(&product).Error
+	if err != nil {
+		return product, err
+	}
 	return
 }
 
-func (s *PointGoodsService) GetPointGoodsList(info memberReq.PointGoodsSearch) (list []memberModel.PointGoods, total int64, err error) {
-	db := bizDB().Model(&memberModel.PointGoods{})
+func (s *PointProductService) GetPointProductList(info memberReq.PointProductSearch) (list []memberModel.PointProduct, total int64, err error) {
+	db := bizDB().Model(&memberModel.PointProduct{})
 	if keyword := strings.TrimSpace(info.Keyword); keyword != "" {
-		db = db.Where("name LIKE ? OR description LIKE ?", "%"+keyword+"%", "%"+keyword+"%")
+		db = db.Where("name LIKE ? OR category LIKE ? OR description LIKE ?", "%"+keyword+"%", "%"+keyword+"%", "%"+keyword+"%")
 	}
-	if info.Status != "" {
+	if category := strings.TrimSpace(info.Category); category != "" {
+		db = db.Where("category = ?", category)
+	}
+	if info.Status > 0 {
 		db = db.Where("status = ?", info.Status)
 	}
-	err = db.Count(&total).Error
-	if err != nil {
+
+	if err = db.Count(&total).Error; err != nil {
 		return
 	}
 	err = db.Scopes(info.Paginate()).Order("sort asc, created_at desc").Find(&list).Error
 	return
 }
 
-func (s *PointGoodsService) UpdatePointGoodsStatus(req memberReq.UpdateGoodsStatusReq) error {
-	if req.Status != memberModel.GoodsStatusOnSale && req.Status != memberModel.GoodsStatusOffSale {
+func (s *PointProductService) UpdatePointProductStatus(req memberReq.UpdatePointProductStatusReq) error {
+	if !s.isValidProductStatus(req.Status) {
 		return errors.New("商品状态不合法")
 	}
-	return bizDB().Model(&memberModel.PointGoods{}).Where("id = ?", req.ID).Update("status", req.Status).Error
-}
-
-func (s *PointGoodsService) UpdatePointGoodsStock(req memberReq.UpdateGoodsStockReq) error {
-	if req.Stock < 0 {
-		return errors.New("库存不能小于0")
+	result := bizDB().Model(&memberModel.PointProduct{}).Where("id = ?", req.ID).Update("status", req.Status)
+	if result.Error != nil {
+		return result.Error
 	}
-	return bizDB().Model(&memberModel.PointGoods{}).Where("id = ?", req.ID).Update("stock", req.Stock).Error
+	if result.RowsAffected != 1 {
+		return errors.New("积分商品不存在")
+	}
+	return nil
 }
 
-func (s *PointGoodsService) GetPointGoodsOptions(keyword string) (list []memberModel.PointGoods, err error) {
-	db := bizDB().Model(&memberModel.PointGoods{}).Where("status = ?", memberModel.GoodsStatusOnSale)
-	keyword = strings.TrimSpace(keyword)
-	if keyword != "" {
+func (s *PointProductService) GetPointProductOptions(keyword string) (list []memberModel.PointProduct, err error) {
+	db := bizDB().Model(&memberModel.PointProduct{}).Where("status = ?", memberModel.PointProductStatusOnSale)
+	if keyword = strings.TrimSpace(keyword); keyword != "" {
 		db = db.Where("name LIKE ?", "%"+keyword+"%")
 	}
 	err = db.Order("sort asc, created_at desc").Limit(50).Find(&list).Error
 	return
 }
 
-func (s *PointGoodsService) normalizeGoods(info *memberModel.PointGoods) {
-	if info == nil {
-		return
+func (s *PointProductService) buildPointProduct(input memberReq.PointProductBaseInput) memberModel.PointProduct {
+	product := memberModel.PointProduct{
+		Name:        strings.TrimSpace(input.Name),
+		CoverURL:    strings.TrimSpace(input.CoverURL),
+		Category:    strings.TrimSpace(input.Category),
+		PointsPrice: input.PointsPrice,
+		Stock:       input.Stock,
+		Status:      input.Status,
+		Sort:        input.Sort,
+		Description: strings.TrimSpace(input.Description),
 	}
-	info.Name = strings.TrimSpace(info.Name)
-	info.CoverImage = strings.TrimSpace(info.CoverImage)
-	info.Description = strings.TrimSpace(info.Description)
-	if info.Status == "" {
-		info.Status = memberModel.GoodsStatusOnSale
+	if product.Status == 0 {
+		product.Status = memberModel.PointProductStatusOffSale
 	}
+	return product
 }
 
-func (s *PointGoodsService) validatePointGoods(info *memberModel.PointGoods) error {
-	if info == nil {
-		return errors.New("商品信息不能为空")
-	}
-	if info.Name == "" {
+func (s *PointProductService) validatePointProduct(product memberModel.PointProduct) error {
+	if product.Name == "" {
 		return errors.New("商品名称不能为空")
 	}
-	if info.PointsPrice <= 0 {
-		return errors.New("积分价格必须大于0")
+	if product.PointsPrice <= 0 {
+		return errors.New("兑换积分必须大于0")
 	}
-	if info.Stock < 0 {
+	if product.Stock < 0 {
 		return errors.New("库存不能小于0")
 	}
-	if info.LimitPerMember < 0 {
-		return errors.New("每人限兑数量不能小于0")
-	}
-	if info.Sort < 0 {
+	if product.Sort < 0 {
 		return errors.New("排序不能小于0")
 	}
-	if info.Status != memberModel.GoodsStatusOnSale && info.Status != memberModel.GoodsStatusOffSale {
+	if !s.isValidProductStatus(product.Status) {
 		return errors.New("商品状态不合法")
 	}
 	return nil
+}
+
+func (s *PointProductService) isValidProductStatus(status int) bool {
+	return status == memberModel.PointProductStatusOnSale || status == memberModel.PointProductStatusOffSale
 }

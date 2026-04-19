@@ -3,7 +3,10 @@
     <div class="gva-search-box">
       <el-form :inline="true" :model="searchInfo">
         <el-form-item label="商品关键词">
-          <el-input v-model="searchInfo.keyword" clearable placeholder="请输入商品名称" style="width: 240px" />
+          <el-input v-model="searchInfo.keyword" clearable placeholder="名称 / 分类 / 说明" style="width: 240px" />
+        </el-form-item>
+        <el-form-item label="分类">
+          <el-input v-model="searchInfo.category" clearable placeholder="请输入分类" />
         </el-form-item>
         <el-form-item label="状态">
           <el-select v-model="searchInfo.status" clearable style="width: 160px">
@@ -26,8 +29,8 @@
         <el-table-column align="left" label="封面" width="96">
           <template #default="scope">
             <el-image
-              v-if="scope.row.coverImage"
-              :src="scope.row.coverImage"
+              v-if="scope.row.coverUrl"
+              :src="scope.row.coverUrl"
               fit="cover"
               style="width: 56px; height: 56px; border-radius: 12px"
             />
@@ -35,32 +38,32 @@
           </template>
         </el-table-column>
         <el-table-column align="left" label="商品名称" min-width="160" prop="name" />
+        <el-table-column align="left" label="分类" min-width="120" prop="category" />
         <el-table-column align="left" label="积分价格" min-width="100" prop="pointsPrice" />
         <el-table-column align="left" label="库存" min-width="90" prop="stock" />
-        <el-table-column align="left" label="每人限兑" min-width="100" prop="limitPerMember" />
         <el-table-column align="left" label="状态" min-width="100">
           <template #default="scope">
-            <el-tag :type="scope.row.status === 'on_sale' ? 'success' : 'info'">
-              {{ scope.row.status === 'on_sale' ? '上架中' : '已下架' }}
+            <el-tag :type="scope.row.status === 1 ? 'success' : 'info'">
+              {{ scope.row.status === 1 ? '上架中' : '已下架' }}
             </el-tag>
           </template>
         </el-table-column>
         <el-table-column align="left" label="排序" min-width="80" prop="sort" />
+        <el-table-column align="left" label="说明" min-width="220" prop="description" show-overflow-tooltip />
         <el-table-column align="left" label="更新时间" min-width="170">
           <template #default="scope">
             {{ formatDate(scope.row.updatedAt) }}
           </template>
         </el-table-column>
-        <el-table-column align="left" label="操作" min-width="260" fixed="right">
+        <el-table-column align="left" label="操作" min-width="220" fixed="right">
           <template #default="scope">
             <el-button link type="primary" icon="edit" @click="openEditDialog(scope.row)">编辑</el-button>
-            <el-button link type="primary" icon="box" @click="openStockDialog(scope.row)">库存</el-button>
             <el-button
               link
-              :type="scope.row.status === 'on_sale' ? 'warning' : 'success'"
+              :type="scope.row.status === 1 ? 'warning' : 'success'"
               @click="toggleStatus(scope.row)"
             >
-              {{ scope.row.status === 'on_sale' ? '下架' : '上架' }}
+              {{ scope.row.status === 1 ? '下架' : '上架' }}
             </el-button>
             <el-button link type="danger" icon="delete" @click="handleDelete(scope.row)">删除</el-button>
           </template>
@@ -89,6 +92,11 @@
             </el-form-item>
           </el-col>
           <el-col :span="12">
+            <el-form-item label="商品分类">
+              <el-input v-model="formData.category" clearable />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
             <el-form-item label="积分价格">
               <el-input-number v-model="formData.pointsPrice" :min="1" style="width: 100%" />
             </el-form-item>
@@ -96,11 +104,6 @@
           <el-col :span="12">
             <el-form-item label="库存">
               <el-input-number v-model="formData.stock" :min="0" style="width: 100%" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="每人限兑">
-              <el-input-number v-model="formData.limitPerMember" :min="0" style="width: 100%" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -117,11 +120,11 @@
           </el-col>
           <el-col :span="24">
             <el-form-item label="封面地址">
-              <el-input v-model="formData.coverImage" clearable placeholder="可直接填写图片 URL" />
+              <el-input v-model="formData.coverUrl" clearable placeholder="可直接填写图片 URL" />
             </el-form-item>
           </el-col>
           <el-col :span="24">
-            <el-form-item label="商品描述">
+            <el-form-item label="商品说明">
               <el-input v-model="formData.description" :rows="5" type="textarea" />
             </el-form-item>
           </el-col>
@@ -132,61 +135,46 @@
         <el-button type="primary" @click="submitForm">确定</el-button>
       </template>
     </el-dialog>
-
-    <el-dialog v-model="stockDialogVisible" title="库存管理" width="420px">
-      <el-form label-width="90px" :model="stockForm">
-        <el-form-item label="商品名称">
-          <div>{{ stockGoodsName }}</div>
-        </el-form-item>
-        <el-form-item label="库存数量">
-          <el-input-number v-model="stockForm.stock" :min="0" style="width: 100%" />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="closeStockDialog">取消</el-button>
-        <el-button type="primary" @click="submitStock">保存</el-button>
-      </template>
-    </el-dialog>
   </div>
 </template>
 
 <script setup>
   import {
-    createPointGoods,
-    deletePointGoods,
-    findPointGoods,
-    getPointGoodsList,
-    updatePointGoods,
-    updatePointGoodsStatus,
-    updatePointGoodsStock
+    createPointProduct,
+    deletePointProduct,
+    findPointProduct,
+    getPointProductList,
+    updatePointProduct,
+    updatePointProductStatus
   } from '@/api/member'
   import { formatDate } from '@/utils/format'
   import { ElMessage, ElMessageBox } from 'element-plus'
-  import { computed, ref } from 'vue'
+  import { ref } from 'vue'
 
   defineOptions({
-    name: 'PointGoodsPage'
+    name: 'PointProductPage'
   })
 
   const defaultForm = () => ({
     id: 0,
     name: '',
-    coverImage: '',
+    coverUrl: '',
+    category: '',
     description: '',
     pointsPrice: 100,
     stock: 0,
-    limitPerMember: 0,
-    status: 'on_sale',
+    status: 2,
     sort: 0
   })
 
   const statusOptions = [
-    { label: '上架中', value: 'on_sale' },
-    { label: '已下架', value: 'off_sale' }
+    { label: '上架中', value: 1 },
+    { label: '已下架', value: 2 }
   ]
 
   const searchInfo = ref({
     keyword: '',
+    category: '',
     status: ''
   })
   const tableData = ref([])
@@ -198,18 +186,8 @@
   const dialogType = ref('create')
   const formData = ref(defaultForm())
 
-  const stockDialogVisible = ref(false)
-  const stockForm = ref({
-    id: 0,
-    stock: 0
-  })
-  const stockGoodsName = computed(() => {
-    const current = tableData.value.find((item) => item.id === stockForm.value.id)
-    return current?.name || '-'
-  })
-
   const getTableData = async () => {
-    const res = await getPointGoodsList({
+    const res = await getPointProductList({
       page: page.value,
       pageSize: pageSize.value,
       ...searchInfo.value
@@ -225,6 +203,7 @@
   const resetSearch = () => {
     searchInfo.value = {
       keyword: '',
+      category: '',
       status: ''
     }
     page.value = 1
@@ -248,7 +227,7 @@
   }
 
   const openEditDialog = async (row) => {
-    const res = await findPointGoods({ id: row.id })
+    const res = await findPointProduct({ id: row.id })
     if (res.code === 0) {
       dialogType.value = 'update'
       formData.value = {
@@ -265,7 +244,7 @@
   }
 
   const submitForm = async () => {
-    const action = dialogType.value === 'create' ? createPointGoods : updatePointGoods
+    const action = dialogType.value === 'create' ? createPointProduct : updatePointProduct
     const res = await action(formData.value)
     if (res.code === 0) {
       ElMessage.success(dialogType.value === 'create' ? '新增商品成功' : '更新商品成功')
@@ -275,38 +254,13 @@
   }
 
   const toggleStatus = async (row) => {
-    const nextStatus = row.status === 'on_sale' ? 'off_sale' : 'on_sale'
-    const res = await updatePointGoodsStatus({
+    const nextStatus = row.status === 1 ? 2 : 1
+    const res = await updatePointProductStatus({
       id: row.id,
       status: nextStatus
     })
     if (res.code === 0) {
-      ElMessage.success(nextStatus === 'on_sale' ? '商品已上架' : '商品已下架')
-      getTableData()
-    }
-  }
-
-  const openStockDialog = (row) => {
-    stockForm.value = {
-      id: row.id,
-      stock: row.stock
-    }
-    stockDialogVisible.value = true
-  }
-
-  const closeStockDialog = () => {
-    stockDialogVisible.value = false
-    stockForm.value = {
-      id: 0,
-      stock: 0
-    }
-  }
-
-  const submitStock = async () => {
-    const res = await updatePointGoodsStock(stockForm.value)
-    if (res.code === 0) {
-      ElMessage.success('库存更新成功')
-      closeStockDialog()
+      ElMessage.success(nextStatus === 1 ? '商品已上架' : '商品已下架')
       getTableData()
     }
   }
@@ -315,7 +269,7 @@
     await ElMessageBox.confirm('删除商品后不可恢复，确认继续吗？', '提示', {
       type: 'warning'
     })
-    const res = await deletePointGoods({ id: row.id })
+    const res = await deletePointProduct({ id: row.id })
     if (res.code === 0) {
       ElMessage.success('删除商品成功')
       if (tableData.value.length === 1 && page.value > 1) {

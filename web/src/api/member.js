@@ -64,6 +64,14 @@ export const getMemberOptions = (params) => {
   })
 }
 
+export const findPointAccount = (params) => {
+  return service({
+    url: '/pointAccount/findPointAccount',
+    method: 'get',
+    params
+  })
+}
+
 export const getPointAccountList = (params) => {
   return service({
     url: '/pointAccount/getPointAccountList',
@@ -88,121 +96,105 @@ export const manualSubPoints = (data) => {
   })
 }
 
-export const getPointLogList = (params) => {
+export const getPointTransactionList = (params) => {
   return service({
-    url: '/pointLog/getPointLogList',
+    url: '/pointTransaction/getPointTransactionList',
     method: 'get',
     params
   })
 }
 
-export const createPointGoods = (data) => {
+export const createPointProduct = (data) => {
   return service({
-    url: '/pointGoods/createPointGoods',
+    url: '/pointProduct/createPointProduct',
     method: 'post',
     data
   })
 }
 
-export const deletePointGoods = (data) => {
+export const deletePointProduct = (data) => {
   return service({
-    url: '/pointGoods/deletePointGoods',
+    url: '/pointProduct/deletePointProduct',
     method: 'delete',
     data
   })
 }
 
-export const updatePointGoods = (data) => {
+export const updatePointProduct = (data) => {
   return service({
-    url: '/pointGoods/updatePointGoods',
+    url: '/pointProduct/updatePointProduct',
     method: 'put',
     data
   })
 }
 
-export const findPointGoods = (params) => {
+export const findPointProduct = (params) => {
   return service({
-    url: '/pointGoods/findPointGoods',
+    url: '/pointProduct/findPointProduct',
     method: 'get',
     params
   })
 }
 
-export const getPointGoodsList = (params) => {
+export const getPointProductList = (params) => {
   return service({
-    url: '/pointGoods/getPointGoodsList',
+    url: '/pointProduct/getPointProductList',
     method: 'get',
     params
   })
 }
 
-export const updatePointGoodsStatus = (data) => {
+export const updatePointProductStatus = (data) => {
   return service({
-    url: '/pointGoods/updatePointGoodsStatus',
+    url: '/pointProduct/updatePointProductStatus',
     method: 'put',
     data
   })
 }
 
-export const updatePointGoodsStock = (data) => {
+export const getPointProductOptions = (params) => {
   return service({
-    url: '/pointGoods/updatePointGoodsStock',
-    method: 'put',
-    data
-  })
-}
-
-export const getPointGoodsOptions = (params) => {
-  return service({
-    url: '/pointGoods/getPointGoodsOptions',
+    url: '/pointProduct/getPointProductOptions',
     method: 'get',
     params
   })
 }
 
-export const createExchangeOrder = (data) => {
+export const createRedemptionOrder = (data) => {
   return service({
-    url: '/exchangeOrder/createExchangeOrder',
+    url: '/redemptionOrder/createRedemptionOrder',
     method: 'post',
     data
   })
 }
 
-export const findExchangeOrder = (params) => {
+export const findRedemptionOrder = (params) => {
   return service({
-    url: '/exchangeOrder/findExchangeOrder',
+    url: '/redemptionOrder/findRedemptionOrder',
     method: 'get',
     params
   })
 }
 
-export const getExchangeOrderList = (params) => {
+export const getRedemptionOrderList = (params) => {
   return service({
-    url: '/exchangeOrder/getExchangeOrderList',
+    url: '/redemptionOrder/getRedemptionOrderList',
     method: 'get',
     params
   })
 }
 
-export const verifyExchangeOrder = (data) => {
+export const completeRedemptionOrder = (data) => {
   return service({
-    url: '/exchangeOrder/verifyExchangeOrder',
+    url: '/redemptionOrder/completeRedemptionOrder',
     method: 'post',
     data
   })
 }
 
-export const cancelExchangeOrder = (data) => {
+export const cancelRedemptionOrder = (data) => {
   return service({
-    url: '/exchangeOrder/cancelExchangeOrder',
-    method: 'post',
-    data
-  })
-}
-
-export const refundExchangeOrder = (data) => {
-  return service({
-    url: '/exchangeOrder/refundExchangeOrder',
+    url: '/redemptionOrder/cancelRedemptionOrder',
     method: 'post',
     data
   })

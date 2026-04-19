@@ -7,6 +7,7 @@ import (
 )
 
 func TestPluginGenModel_Injection(t *testing.T) {
+	requirePluginGVAFixture(t, "gen", "main.go")
 	type fields struct {
 		Type        Type
 		Path        string
@@ -67,6 +68,7 @@ func TestPluginGenModel_Injection(t *testing.T) {
 }
 
 func TestPluginGenModel_Rollback(t *testing.T) {
+	requirePluginGVAFixture(t, "gen", "main.go")
 	type fields struct {
 		Type        Type
 		Path        string

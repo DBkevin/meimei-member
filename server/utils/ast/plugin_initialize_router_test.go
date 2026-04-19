@@ -7,6 +7,7 @@ import (
 )
 
 func TestPluginInitializeRouter_Injection(t *testing.T) {
+	requirePluginGVAFixture(t, "initialize", "router.go")
 	type fields struct {
 		Type                 Type
 		Path                 string
@@ -81,6 +82,7 @@ func TestPluginInitializeRouter_Injection(t *testing.T) {
 }
 
 func TestPluginInitializeRouter_Rollback(t *testing.T) {
+	requirePluginGVAFixture(t, "initialize", "router.go")
 	type fields struct {
 		Type                 Type
 		Path                 string
