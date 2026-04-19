@@ -1,21 +1,46 @@
 package member
 
 import (
+	"database/sql"
+	"os"
+	"path/filepath"
+	"runtime"
+	"strings"
 	"testing"
 
+	"github.com/flipped-aurora/gin-vue-admin/server/config"
 	"github.com/flipped-aurora/gin-vue-admin/server/global"
 	memberModel "github.com/flipped-aurora/gin-vue-admin/server/model/member"
 	memberReq "github.com/flipped-aurora/gin-vue-admin/server/model/member/request"
-	"github.com/glebarez/sqlite"
+	_ "github.com/go-sql-driver/mysql"
 	"github.com/stretchr/testify/require"
+	"gopkg.in/yaml.v3"
+	gormmysql "gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
+
+type memberTestFileConfig struct {
+	Mysql config.Mysql `yaml:"mysql"`
+}
 
 func setupMemberTestDB(t *testing.T) *gorm.DB {
 	t.Helper()
 
-	db, err := gorm.Open(sqlite.Open("file::memory:?cache=shared"), &gorm.Config{})
+	mysqlConfig, dsn := loadMemberTestDBConfig(t)
+	if mysqlConfig != nil {
+		ensureMemberTestDatabase(t, *mysqlConfig)
+	}
+
+	db, err := gorm.Open(gormmysql.New(gormmysql.Config{
+		DSN:               dsn,
+		DefaultStringSize: 191,
+	}), &gorm.Config{})
 	require.NoError(t, err)
+
+	sqlDB, err := db.DB()
+	require.NoError(t, err)
+	sqlDB.SetMaxIdleConns(1)
+	sqlDB.SetMaxOpenConns(4)
 
 	err = db.AutoMigrate(
 		&memberModel.Member{},
@@ -26,17 +51,81 @@ func setupMemberTestDB(t *testing.T) *gorm.DB {
 	)
 	require.NoError(t, err)
 
+	resetMemberTestTables(t, db)
+
 	oldDB := global.GVA_DB
 	global.GVA_DB = db
 	t.Cleanup(func() {
+		resetMemberTestTables(t, db)
 		global.GVA_DB = oldDB
-		sqlDB, sqlErr := db.DB()
-		if sqlErr == nil {
-			_ = sqlDB.Close()
-		}
+		_ = sqlDB.Close()
 	})
 
 	return db
+}
+
+func loadMemberTestDBConfig(t *testing.T) (*config.Mysql, string) {
+	t.Helper()
+
+	if dsn := strings.TrimSpace(os.Getenv("MEMBER_TEST_DSN")); dsn != "" {
+		return nil, dsn
+	}
+
+	configPath := strings.TrimSpace(os.Getenv("MEMBER_TEST_CONFIG"))
+	if configPath == "" {
+		_, filename, _, ok := runtime.Caller(0)
+		require.True(t, ok, "无法定位会员测试文件路径")
+		configPath = filepath.Join(filepath.Dir(filename), "..", "..", "config.local.yaml")
+	}
+
+	content, err := os.ReadFile(configPath)
+	require.NoError(t, err, "读取会员测试配置失败: %s", configPath)
+
+	var cfg memberTestFileConfig
+	err = yaml.Unmarshal(content, &cfg)
+	require.NoError(t, err, "解析会员测试配置失败: %s", configPath)
+
+	dbName := strings.TrimSpace(os.Getenv("MEMBER_TEST_DB_NAME"))
+	if dbName == "" {
+		require.NotEmpty(t, cfg.Mysql.Dbname, "config.local.yaml 中缺少 mysql.db-name")
+		dbName = cfg.Mysql.Dbname + "_codex_test"
+	}
+	cfg.Mysql.Dbname = dbName
+	if cfg.Mysql.Config == "" {
+		cfg.Mysql.Config = "charset=utf8mb4&parseTime=True&loc=Local"
+	}
+
+	return &cfg.Mysql, cfg.Mysql.Dsn()
+}
+
+func ensureMemberTestDatabase(t *testing.T, mysqlConfig config.Mysql) {
+	t.Helper()
+
+	adminDSN := mysqlConfig.Username + ":" + mysqlConfig.Password + "@tcp(" + mysqlConfig.Path + ":" + mysqlConfig.Port + ")/?" + mysqlConfig.Config
+	sqlDB, err := sql.Open("mysql", adminDSN)
+	require.NoError(t, err)
+	defer func() {
+		_ = sqlDB.Close()
+	}()
+
+	_, err = sqlDB.Exec("CREATE DATABASE IF NOT EXISTS `" + mysqlConfig.Dbname + "` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci")
+	require.NoError(t, err)
+}
+
+func resetMemberTestTables(t *testing.T, db *gorm.DB) {
+	t.Helper()
+
+	require.NoError(t, db.Exec("SET FOREIGN_KEY_CHECKS = 0").Error)
+	for _, table := range []string{
+		memberModel.RedemptionOrder{}.TableName(),
+		memberModel.PointTransaction{}.TableName(),
+		memberModel.PointAccount{}.TableName(),
+		memberModel.PointProduct{}.TableName(),
+		memberModel.Member{}.TableName(),
+	} {
+		require.NoError(t, db.Exec("TRUNCATE TABLE `"+table+"`").Error)
+	}
+	require.NoError(t, db.Exec("SET FOREIGN_KEY_CHECKS = 1").Error)
 }
 
 func createTestMember(t *testing.T, req memberReq.CreateMemberReq) memberModel.Member {
@@ -270,4 +359,84 @@ func TestRedemptionOrderServiceCreateCancelAndComplete(t *testing.T) {
 	err = bizDB().Model(&memberModel.PointTransaction{}).Count(&transactionCount).Error
 	require.NoError(t, err)
 	require.EqualValues(t, 4, transactionCount)
+}
+
+func TestMemberServiceDeleteMemberRejectsPointHistory(t *testing.T) {
+	setupMemberTestDB(t)
+
+	member := createTestMember(t, memberReq.CreateMemberReq{
+		MemberBaseInput: memberReq.MemberBaseInput{
+			Name:  "周八",
+			Phone: "13800000005",
+		},
+	})
+
+	require.NoError(t, (&PointAccountService{}).ManualAddPoints(memberReq.AdjustPointsReq{
+		MemberID: member.ID,
+		Points:   20,
+		Remark:   "开卡赠送",
+	}, 3001))
+
+	err := (&MemberService{}).DeleteMember(member.ID)
+	require.EqualError(t, err, "该会员已有积分记录或兑换订单，不允许删除，请改为禁用。")
+
+	var count int64
+	err = bizDB().Model(&memberModel.Member{}).Where("id = ?", member.ID).Count(&count).Error
+	require.NoError(t, err)
+	require.EqualValues(t, 1, count)
+}
+
+func TestRedemptionOrderServiceCreateRedemptionOrderRejectsDisabledMemberAndInsufficientStock(t *testing.T) {
+	setupMemberTestDB(t)
+
+	disabledMember := createTestMember(t, memberReq.CreateMemberReq{
+		MemberBaseInput: memberReq.MemberBaseInput{
+			Name:   "吴九",
+			Phone:  "13800000006",
+			Status: memberModel.MemberStatusDisabled,
+		},
+	})
+
+	enabledMember := createTestMember(t, memberReq.CreateMemberReq{
+		MemberBaseInput: memberReq.MemberBaseInput{
+			Name:  "郑十",
+			Phone: "13800000007",
+		},
+	})
+
+	require.NoError(t, (&PointAccountService{}).ManualAddPoints(memberReq.AdjustPointsReq{
+		MemberID: enabledMember.ID,
+		Points:   500,
+		Remark:   "测试积分",
+	}, 3002))
+
+	product := createTestProduct(t, memberReq.CreatePointProductReq{
+		PointProductBaseInput: memberReq.PointProductBaseInput{
+			Name:        "热玛吉护理",
+			Category:    "项目",
+			PointsPrice: 120,
+			Stock:       1,
+			Status:      memberModel.PointProductStatusOnSale,
+			Sort:        2,
+		},
+	})
+
+	orderService := &RedemptionOrderService{}
+	err := orderService.CreateRedemptionOrder(memberReq.CreateRedemptionOrderReq{
+		MemberID:      disabledMember.ID,
+		ProductID:     product.ID,
+		Quantity:      1,
+		ReceiverName:  "吴九",
+		ReceiverPhone: "13800000006",
+	}, 3003)
+	require.EqualError(t, err, "该会员已禁用，不能创建兑换订单。")
+
+	err = orderService.CreateRedemptionOrder(memberReq.CreateRedemptionOrderReq{
+		MemberID:      enabledMember.ID,
+		ProductID:     product.ID,
+		Quantity:      2,
+		ReceiverName:  "郑十",
+		ReceiverPhone: "13800000007",
+	}, 3004)
+	require.EqualError(t, err, "商品库存不足，无法兑换")
 }

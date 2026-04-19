@@ -38,10 +38,10 @@
             {{ formatDate(scope.row.updatedAt) }}
           </template>
         </el-table-column>
-        <el-table-column align="left" label="操作" min-width="180" fixed="right">
+        <el-table-column v-if="showActionColumn" align="left" label="操作" min-width="180" fixed="right">
           <template #default="scope">
-            <el-button link type="success" icon="plus" @click="openAdjustDialog(scope.row, 'add')">加积分</el-button>
-            <el-button link type="warning" icon="minus" @click="openAdjustDialog(scope.row, 'sub')">扣积分</el-button>
+            <el-button v-if="btnAuth.adjustAdd" link type="success" icon="plus" @click="openAdjustDialog(scope.row, 'add')">加积分</el-button>
+            <el-button v-if="btnAuth.adjustSub" link type="warning" icon="minus" @click="openAdjustDialog(scope.row, 'sub')">扣积分</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -60,14 +60,14 @@
     </div>
 
     <el-dialog v-model="adjustDialogVisible" :title="adjustType === 'add' ? '手工增加积分' : '手工扣减积分'" width="420px">
-      <el-form label-width="90px" :model="adjustForm">
+      <el-form ref="adjustFormRef" label-width="90px" :model="adjustForm" :rules="rules">
         <el-form-item label="当前会员">
           <div>{{ currentMemberLabel }}</div>
         </el-form-item>
-        <el-form-item label="积分数量">
+        <el-form-item label="积分数量" prop="points">
           <el-input-number v-model="adjustForm.points" :min="1" :step="10" style="width: 100%" />
         </el-form-item>
-        <el-form-item label="备注">
+        <el-form-item label="备注" prop="remark">
           <el-input v-model="adjustForm.remark" :rows="3" type="textarea" />
         </el-form-item>
       </el-form>
@@ -81,9 +81,10 @@
 
 <script setup>
   import { getPointAccountList, manualAddPoints, manualSubPoints } from '@/api/member'
+  import { useBtnAuth } from '@/utils/btnAuth'
   import { formatDate } from '@/utils/format'
   import { ElMessage } from 'element-plus'
-  import { computed, ref } from 'vue'
+  import { computed, nextTick, ref } from 'vue'
   import { useRoute } from 'vue-router'
 
   defineOptions({
@@ -101,6 +102,8 @@
   const pageSize = ref(10)
   const total = ref(0)
 
+  const adjustFormRef = ref()
+  const btnAuth = useBtnAuth()
   const adjustDialogVisible = ref(false)
   const adjustType = ref('add')
   const adjustForm = ref({
@@ -109,6 +112,31 @@
     remark: ''
   })
   const currentMember = ref(null)
+  const showActionColumn = computed(() => Boolean(btnAuth.adjustAdd || btnAuth.adjustSub))
+  const trimmedRequired = (message) => ({
+    validator: (_, value, callback) => {
+      if (typeof value === 'string' ? value.trim() : value || value === 0) {
+        callback()
+        return
+      }
+      callback(new Error(message))
+    },
+    trigger: 'blur'
+  })
+  const positiveNumber = (message) => ({
+    validator: (_, value, callback) => {
+      if (typeof value === 'number' && value > 0) {
+        callback()
+        return
+      }
+      callback(new Error(message))
+    },
+    trigger: 'change'
+  })
+  const rules = {
+    points: [positiveNumber('积分数量必须大于 0')],
+    remark: [trimmedRequired('请输入调整备注')]
+  }
 
   const currentMemberLabel = computed(() => {
     if (!currentMember.value) {
@@ -150,7 +178,7 @@
     getTableData()
   }
 
-  const openAdjustDialog = (row, type) => {
+  const openAdjustDialog = async (row, type) => {
     currentMember.value = row.member
     adjustType.value = type
     adjustForm.value = {
@@ -159,6 +187,8 @@
       remark: ''
     }
     adjustDialogVisible.value = true
+    await nextTick()
+    adjustFormRef.value?.clearValidate()
   }
 
   const closeAdjustDialog = () => {
@@ -169,9 +199,18 @@
       remark: ''
     }
     currentMember.value = null
+    adjustFormRef.value?.clearValidate()
   }
 
   const submitAdjust = async () => {
+    if (!adjustFormRef.value) {
+      return
+    }
+    try {
+      await adjustFormRef.value.validate()
+    } catch {
+      return
+    }
     const action = adjustType.value === 'add' ? manualAddPoints : manualSubPoints
     const res = await action(adjustForm.value)
     if (res.code === 0) {

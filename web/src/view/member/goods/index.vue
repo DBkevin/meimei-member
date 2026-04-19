@@ -22,7 +22,7 @@
 
     <div class="gva-table-box">
       <div class="gva-btn-list">
-        <el-button type="primary" icon="plus" @click="openCreateDialog">新增商品</el-button>
+        <el-button v-if="btnAuth.add" type="primary" icon="plus" @click="openCreateDialog">新增商品</el-button>
       </div>
 
       <el-table :data="tableData" row-key="id">
@@ -55,17 +55,18 @@
             {{ formatDate(scope.row.updatedAt) }}
           </template>
         </el-table-column>
-        <el-table-column align="left" label="操作" min-width="220" fixed="right">
+        <el-table-column v-if="showActionColumn" align="left" label="操作" min-width="220" fixed="right">
           <template #default="scope">
-            <el-button link type="primary" icon="edit" @click="openEditDialog(scope.row)">编辑</el-button>
+            <el-button v-if="btnAuth.edit" link type="primary" icon="edit" @click="openEditDialog(scope.row)">编辑</el-button>
             <el-button
+              v-if="btnAuth.status"
               link
               :type="scope.row.status === 1 ? 'warning' : 'success'"
               @click="toggleStatus(scope.row)"
             >
               {{ scope.row.status === 1 ? '下架' : '上架' }}
             </el-button>
-            <el-button link type="danger" icon="delete" @click="handleDelete(scope.row)">删除</el-button>
+            <el-button v-if="btnAuth.delete" link type="danger" icon="delete" @click="handleDelete(scope.row)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -84,10 +85,10 @@
     </div>
 
     <el-dialog v-model="dialogVisible" :title="dialogType === 'create' ? '新增积分商品' : '编辑积分商品'" width="760px">
-      <el-form label-width="100px" :model="formData">
+      <el-form ref="formRef" label-width="100px" :model="formData" :rules="rules">
         <el-row :gutter="16">
           <el-col :span="12">
-            <el-form-item label="商品名称">
+            <el-form-item label="商品名称" prop="name">
               <el-input v-model="formData.name" clearable />
             </el-form-item>
           </el-col>
@@ -97,34 +98,34 @@
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="积分价格">
+            <el-form-item label="积分价格" prop="pointsPrice">
               <el-input-number v-model="formData.pointsPrice" :min="1" style="width: 100%" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="库存">
+            <el-form-item label="库存" prop="stock">
               <el-input-number v-model="formData.stock" :min="0" style="width: 100%" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="状态">
+            <el-form-item label="状态" prop="status">
               <el-select v-model="formData.status" style="width: 100%">
                 <el-option v-for="item in statusOptions" :key="item.value" :label="item.label" :value="item.value" />
               </el-select>
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="排序">
+            <el-form-item label="排序" prop="sort">
               <el-input-number v-model="formData.sort" :min="0" style="width: 100%" />
             </el-form-item>
           </el-col>
           <el-col :span="24">
-            <el-form-item label="封面地址">
+            <el-form-item label="封面地址" prop="coverUrl">
               <el-input v-model="formData.coverUrl" clearable placeholder="可直接填写图片 URL" />
             </el-form-item>
           </el-col>
           <el-col :span="24">
-            <el-form-item label="商品说明">
+            <el-form-item label="商品说明" prop="description">
               <el-input v-model="formData.description" :rows="5" type="textarea" />
             </el-form-item>
           </el-col>
@@ -147,9 +148,10 @@
     updatePointProduct,
     updatePointProductStatus
   } from '@/api/member'
+  import { useBtnAuth } from '@/utils/btnAuth'
   import { formatDate } from '@/utils/format'
   import { ElMessage, ElMessageBox } from 'element-plus'
-  import { ref } from 'vue'
+  import { computed, nextTick, ref } from 'vue'
 
   defineOptions({
     name: 'PointProductPage'
@@ -182,9 +184,68 @@
   const pageSize = ref(10)
   const total = ref(0)
 
+  const formRef = ref()
+  const btnAuth = useBtnAuth()
   const dialogVisible = ref(false)
   const dialogType = ref('create')
   const formData = ref(defaultForm())
+  const showActionColumn = computed(() => Boolean(btnAuth.edit || btnAuth.status || btnAuth.delete))
+
+  const trimmedRequired = (message) => ({
+    validator: (_, value, callback) => {
+      if (typeof value === 'string' ? value.trim() : value || value === 0) {
+        callback()
+        return
+      }
+      callback(new Error(message))
+    },
+    trigger: 'blur'
+  })
+  const nonNegativeNumber = (message) => ({
+    validator: (_, value, callback) => {
+      if (typeof value === 'number' && value >= 0) {
+        callback()
+        return
+      }
+      callback(new Error(message))
+    },
+    trigger: 'change'
+  })
+  const positiveNumber = (message) => ({
+    validator: (_, value, callback) => {
+      if (typeof value === 'number' && value > 0) {
+        callback()
+        return
+      }
+      callback(new Error(message))
+    },
+    trigger: 'change'
+  })
+  const coverUrlValidator = (_, value, callback) => {
+    if (!value || !value.trim()) {
+      callback()
+      return
+    }
+    try {
+      const url = new URL(value)
+      if (!['http:', 'https:'].includes(url.protocol)) {
+        callback(new Error('封面地址仅支持 http 或 https'))
+        return
+      }
+      callback()
+    } catch {
+      callback(new Error('请输入合法的图片地址'))
+    }
+  }
+  const rules = {
+    name: [trimmedRequired('请输入商品名称')],
+    pointsPrice: [positiveNumber('兑换积分必须大于 0')],
+    stock: [nonNegativeNumber('库存不能小于 0')],
+    status: [{ required: true, message: '请选择商品状态', trigger: 'change' }],
+    sort: [nonNegativeNumber('排序不能小于 0')],
+    coverUrl: [{ validator: coverUrlValidator, trigger: 'blur' }],
+    description: [{ max: 500, message: '商品说明不能超过 500 个字符', trigger: 'blur' }]
+  }
 
   const getTableData = async () => {
     const res = await getPointProductList({
@@ -220,10 +281,12 @@
     getTableData()
   }
 
-  const openCreateDialog = () => {
+  const openCreateDialog = async () => {
     dialogType.value = 'create'
     formData.value = defaultForm()
     dialogVisible.value = true
+    await nextTick()
+    formRef.value?.clearValidate()
   }
 
   const openEditDialog = async (row) => {
@@ -235,15 +298,26 @@
         ...res.data
       }
       dialogVisible.value = true
+      await nextTick()
+      formRef.value?.clearValidate()
     }
   }
 
   const closeDialog = () => {
     dialogVisible.value = false
     formData.value = defaultForm()
+    formRef.value?.clearValidate()
   }
 
   const submitForm = async () => {
+    if (!formRef.value) {
+      return
+    }
+    try {
+      await formRef.value.validate()
+    } catch {
+      return
+    }
     const action = dialogType.value === 'create' ? createPointProduct : updatePointProduct
     const res = await action(formData.value)
     if (res.code === 0) {

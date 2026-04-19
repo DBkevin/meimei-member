@@ -1,0 +1,240 @@
+=== RUN   TestBootstrapSeedsMemberMenusButtonsAndAuthorityGrants
+
+2026/04/19 15:09:37 [31;1mD:/project/shoping/server/service/member/bootstrap.go:70 [35;1mrecord not found
+[0m[33m[78.916ms] [34;1m[rows:0][0m SELECT * FROM `sys_apis` WHERE (path = '/member/createMember' AND method = 'POST') AND `sys_apis`.`deleted_at` IS NULL ORDER BY `sys_apis`.`id` LIMIT 1
+
+2026/04/19 15:09:37 [31;1mD:/project/shoping/server/service/member/bootstrap.go:70 [35;1mrecord not found
+[0m[33m[75.896ms] [34;1m[rows:0][0m SELECT * FROM `sys_apis` WHERE (path = '/member/deleteMember' AND method = 'DELETE') AND `sys_apis`.`deleted_at` IS NULL ORDER BY `sys_apis`.`id` LIMIT 1
+
+2026/04/19 15:09:37 [31;1mD:/project/shoping/server/service/member/bootstrap.go:70 [35;1mrecord not found
+[0m[33m[74.805ms] [34;1m[rows:0][0m SELECT * FROM `sys_apis` WHERE (path = '/member/updateMember' AND method = 'PUT') AND `sys_apis`.`deleted_at` IS NULL ORDER BY `sys_apis`.`id` LIMIT 1
+
+2026/04/19 15:09:37 [31;1mD:/project/shoping/server/service/member/bootstrap.go:70 [35;1mrecord not found
+[0m[33m[75.368ms] [34;1m[rows:0][0m SELECT * FROM `sys_apis` WHERE (path = '/member/findMember' AND method = 'GET') AND `sys_apis`.`deleted_at` IS NULL ORDER BY `sys_apis`.`id` LIMIT 1
+
+2026/04/19 15:09:37 [31;1mD:/project/shoping/server/service/member/bootstrap.go:70 [35;1mrecord not found
+[0m[33m[76.266ms] [34;1m[rows:0][0m SELECT * FROM `sys_apis` WHERE (path = '/member/getMemberList' AND method = 'GET') AND `sys_apis`.`deleted_at` IS NULL ORDER BY `sys_apis`.`id` LIMIT 1
+
+2026/04/19 15:09:37 [31;1mD:/project/shoping/server/service/member/bootstrap.go:70 [35;1mrecord not found
+[0m[33m[78.275ms] [34;1m[rows:0][0m SELECT * FROM `sys_apis` WHERE (path = '/member/updateMemberStatus' AND method = 'PUT') AND `sys_apis`.`deleted_at` IS NULL ORDER BY `sys_apis`.`id` LIMIT 1
+
+2026/04/19 15:09:38 [31;1mD:/project/shoping/server/service/member/bootstrap.go:70 [35;1mrecord not found
+[0m[33m[76.332ms] [34;1m[rows:0][0m SELECT * FROM `sys_apis` WHERE (path = '/member/getMemberPointAccount' AND method = 'GET') AND `sys_apis`.`deleted_at` IS NULL ORDER BY `sys_apis`.`id` LIMIT 1
+
+2026/04/19 15:09:38 [31;1mD:/project/shoping/server/service/member/bootstrap.go:70 [35;1mrecord not found
+[0m[33m[74.557ms] [34;1m[rows:0][0m SELECT * FROM `sys_apis` WHERE (path = '/member/getMemberOptions' AND method = 'GET') AND `sys_apis`.`deleted_at` IS NULL ORDER BY `sys_apis`.`id` LIMIT 1
+
+2026/04/19 15:09:38 [31;1mD:/project/shoping/server/service/member/bootstrap.go:70 [35;1mrecord not found
+[0m[33m[75.504ms] [34;1m[rows:0][0m SELECT * FROM `sys_apis` WHERE (path = '/pointAccount/findPointAccount' AND method = 'GET') AND `sys_apis`.`deleted_at` IS NULL ORDER BY `sys_apis`.`id` LIMIT 1
+
+2026/04/19 15:09:38 [31;1mD:/project/shoping/server/service/member/bootstrap.go:70 [35;1mrecord not found
+[0m[33m[76.954ms] [34;1m[rows:0][0m SELECT * FROM `sys_apis` WHERE (path = '/pointAccount/getPointAccountList' AND method = 'GET') AND `sys_apis`.`deleted_at` IS NULL ORDER BY `sys_apis`.`id` LIMIT 1
+
+2026/04/19 15:09:38 [31;1mD:/project/shoping/server/service/member/bootstrap.go:70 [35;1mrecord not found
+[0m[33m[84.498ms] [34;1m[rows:0][0m SELECT * FROM `sys_apis` WHERE (path = '/pointAccount/manualAddPoints' AND method = 'POST') AND `sys_apis`.`deleted_at` IS NULL ORDER BY `sys_apis`.`id` LIMIT 1
+
+2026/04/19 15:09:38 [31;1mD:/project/shoping/server/service/member/bootstrap.go:70 [35;1mrecord not found
+[0m[33m[81.052ms] [34;1m[rows:0][0m SELECT * FROM `sys_apis` WHERE (path = '/pointAccount/manualSubPoints' AND method = 'POST') AND `sys_apis`.`deleted_at` IS NULL ORDER BY `sys_apis`.`id` LIMIT 1
+
+2026/04/19 15:09:38 [31;1mD:/project/shoping/server/service/member/bootstrap.go:70 [35;1mrecord not found
+[0m[33m[75.341ms] [34;1m[rows:0][0m SELECT * FROM `sys_apis` WHERE (path = '/pointTransaction/getPointTransactionList' AND method = 'GET') AND `sys_apis`.`deleted_at` IS NULL ORDER BY `sys_apis`.`id` LIMIT 1
+
+2026/04/19 15:09:39 [31;1mD:/project/shoping/server/service/member/bootstrap.go:70 [35;1mrecord not found
+[0m[33m[77.709ms] [34;1m[rows:0][0m SELECT * FROM `sys_apis` WHERE (path = '/pointProduct/createPointProduct' AND method = 'POST') AND `sys_apis`.`deleted_at` IS NULL ORDER BY `sys_apis`.`id` LIMIT 1
+
+2026/04/19 15:09:39 [31;1mD:/project/shoping/server/service/member/bootstrap.go:70 [35;1mrecord not found
+[0m[33m[76.130ms] [34;1m[rows:0][0m SELECT * FROM `sys_apis` WHERE (path = '/pointProduct/deletePointProduct' AND method = 'DELETE') AND `sys_apis`.`deleted_at` IS NULL ORDER BY `sys_apis`.`id` LIMIT 1
+
+2026/04/19 15:09:39 [31;1mD:/project/shoping/server/service/member/bootstrap.go:70 [35;1mrecord not found
+[0m[33m[76.519ms] [34;1m[rows:0][0m SELECT * FROM `sys_apis` WHERE (path = '/pointProduct/updatePointProduct' AND method = 'PUT') AND `sys_apis`.`deleted_at` IS NULL ORDER BY `sys_apis`.`id` LIMIT 1
+
+2026/04/19 15:09:39 [31;1mD:/project/shoping/server/service/member/bootstrap.go:70 [35;1mrecord not found
+[0m[33m[79.980ms] [34;1m[rows:0][0m SELECT * FROM `sys_apis` WHERE (path = '/pointProduct/findPointProduct' AND method = 'GET') AND `sys_apis`.`deleted_at` IS NULL ORDER BY `sys_apis`.`id` LIMIT 1
+
+2026/04/19 15:09:39 [31;1mD:/project/shoping/server/service/member/bootstrap.go:70 [35;1mrecord not found
+[0m[33m[76.663ms] [34;1m[rows:0][0m SELECT * FROM `sys_apis` WHERE (path = '/pointProduct/getPointProductList' AND method = 'GET') AND `sys_apis`.`deleted_at` IS NULL ORDER BY `sys_apis`.`id` LIMIT 1
+
+2026/04/19 15:09:39 [31;1mD:/project/shoping/server/service/member/bootstrap.go:70 [35;1mrecord not found
+[0m[33m[76.225ms] [34;1m[rows:0][0m SELECT * FROM `sys_apis` WHERE (path = '/pointProduct/updatePointProductStatus' AND method = 'PUT') AND `sys_apis`.`deleted_at` IS NULL ORDER BY `sys_apis`.`id` LIMIT 1
+
+2026/04/19 15:09:40 [31;1mD:/project/shoping/server/service/member/bootstrap.go:70 [35;1mrecord not found
+[0m[33m[82.310ms] [34;1m[rows:0][0m SELECT * FROM `sys_apis` WHERE (path = '/pointProduct/getPointProductOptions' AND method = 'GET') AND `sys_apis`.`deleted_at` IS NULL ORDER BY `sys_apis`.`id` LIMIT 1
+
+2026/04/19 15:09:40 [31;1mD:/project/shoping/server/service/member/bootstrap.go:70 [35;1mrecord not found
+[0m[33m[78.448ms] [34;1m[rows:0][0m SELECT * FROM `sys_apis` WHERE (path = '/redemptionOrder/createRedemptionOrder' AND method = 'POST') AND `sys_apis`.`deleted_at` IS NULL ORDER BY `sys_apis`.`id` LIMIT 1
+
+2026/04/19 15:09:40 [31;1mD:/project/shoping/server/service/member/bootstrap.go:70 [35;1mrecord not found
+[0m[33m[80.892ms] [34;1m[rows:0][0m SELECT * FROM `sys_apis` WHERE (path = '/redemptionOrder/findRedemptionOrder' AND method = 'GET') AND `sys_apis`.`deleted_at` IS NULL ORDER BY `sys_apis`.`id` LIMIT 1
+
+2026/04/19 15:09:40 [31;1mD:/project/shoping/server/service/member/bootstrap.go:70 [35;1mrecord not found
+[0m[33m[75.653ms] [34;1m[rows:0][0m SELECT * FROM `sys_apis` WHERE (path = '/redemptionOrder/getRedemptionOrderList' AND method = 'GET') AND `sys_apis`.`deleted_at` IS NULL ORDER BY `sys_apis`.`id` LIMIT 1
+
+2026/04/19 15:09:40 [31;1mD:/project/shoping/server/service/member/bootstrap.go:70 [35;1mrecord not found
+[0m[33m[75.756ms] [34;1m[rows:0][0m SELECT * FROM `sys_apis` WHERE (path = '/redemptionOrder/completeRedemptionOrder' AND method = 'POST') AND `sys_apis`.`deleted_at` IS NULL ORDER BY `sys_apis`.`id` LIMIT 1
+
+2026/04/19 15:09:40 [31;1mD:/project/shoping/server/service/member/bootstrap.go:70 [35;1mrecord not found
+[0m[33m[77.808ms] [34;1m[rows:0][0m SELECT * FROM `sys_apis` WHERE (path = '/redemptionOrder/cancelRedemptionOrder' AND method = 'POST') AND `sys_apis`.`deleted_at` IS NULL ORDER BY `sys_apis`.`id` LIMIT 1
+
+2026/04/19 15:09:40 [31;1mD:/project/shoping/server/service/member/bootstrap.go:224 [35;1mrecord not found
+[0m[33m[82.340ms] [34;1m[rows:0][0m SELECT * FROM `sys_base_menus` WHERE name = 'medicalMember' AND `sys_base_menus`.`deleted_at` IS NULL ORDER BY `sys_base_menus`.`id` LIMIT 1
+
+2026/04/19 15:09:41 [31;1mD:/project/shoping/server/service/member/bootstrap.go:224 [35;1mrecord not found
+[0m[33m[76.767ms] [34;1m[rows:0][0m SELECT * FROM `sys_base_menus` WHERE name = 'memberList' AND `sys_base_menus`.`deleted_at` IS NULL ORDER BY `sys_base_menus`.`id` LIMIT 1
+
+2026/04/19 15:09:41 [31;1mD:/project/shoping/server/service/member/bootstrap.go:204 [35;1mrecord not found
+[0m[33m[75.659ms] [34;1m[rows:0][0m SELECT * FROM `sys_base_menu_btns` WHERE (sys_base_menu_id = 14 AND name = 'add') AND `sys_base_menu_btns`.`deleted_at` IS NULL ORDER BY `sys_base_menu_btns`.`id` LIMIT 1
+
+2026/04/19 15:09:41 [31;1mD:/project/shoping/server/service/member/bootstrap.go:204 [35;1mrecord not found
+[0m[33m[80.497ms] [34;1m[rows:0][0m SELECT * FROM `sys_base_menu_btns` WHERE (sys_base_menu_id = 14 AND name = 'edit') AND `sys_base_menu_btns`.`deleted_at` IS NULL ORDER BY `sys_base_menu_btns`.`id` LIMIT 1
+
+2026/04/19 15:09:41 [31;1mD:/project/shoping/server/service/member/bootstrap.go:204 [35;1mrecord not found
+[0m[33m[77.027ms] [34;1m[rows:0][0m SELECT * FROM `sys_base_menu_btns` WHERE (sys_base_menu_id = 14 AND name = 'status') AND `sys_base_menu_btns`.`deleted_at` IS NULL ORDER BY `sys_base_menu_btns`.`id` LIMIT 1
+
+2026/04/19 15:09:42 [31;1mD:/project/shoping/server/service/member/bootstrap.go:204 [35;1mrecord not found
+[0m[33m[75.028ms] [34;1m[rows:0][0m SELECT * FROM `sys_base_menu_btns` WHERE (sys_base_menu_id = 14 AND name = 'account') AND `sys_base_menu_btns`.`deleted_at` IS NULL ORDER BY `sys_base_menu_btns`.`id` LIMIT 1
+
+2026/04/19 15:09:42 [31;1mD:/project/shoping/server/service/member/bootstrap.go:204 [35;1mrecord not found
+[0m[33m[71.193ms] [34;1m[rows:0][0m SELECT * FROM `sys_base_menu_btns` WHERE (sys_base_menu_id = 14 AND name = 'delete') AND `sys_base_menu_btns`.`deleted_at` IS NULL ORDER BY `sys_base_menu_btns`.`id` LIMIT 1
+
+2026/04/19 15:09:42 [31;1mD:/project/shoping/server/service/member/bootstrap.go:224 [35;1mrecord not found
+[0m[33m[76.777ms] [34;1m[rows:0][0m SELECT * FROM `sys_base_menus` WHERE name = 'pointAccount' AND `sys_base_menus`.`deleted_at` IS NULL ORDER BY `sys_base_menus`.`id` LIMIT 1
+
+2026/04/19 15:09:42 [31;1mD:/project/shoping/server/service/member/bootstrap.go:204 [35;1mrecord not found
+[0m[33m[85.743ms] [34;1m[rows:0][0m SELECT * FROM `sys_base_menu_btns` WHERE (sys_base_menu_id = 15 AND name = 'adjustAdd') AND `sys_base_menu_btns`.`deleted_at` IS NULL ORDER BY `sys_base_menu_btns`.`id` LIMIT 1
+
+2026/04/19 15:09:42 [31;1mD:/project/shoping/server/service/member/bootstrap.go:204 [35;1mrecord not found
+[0m[33m[76.957ms] [34;1m[rows:0][0m SELECT * FROM `sys_base_menu_btns` WHERE (sys_base_menu_id = 15 AND name = 'adjustSub') AND `sys_base_menu_btns`.`deleted_at` IS NULL ORDER BY `sys_base_menu_btns`.`id` LIMIT 1
+
+2026/04/19 15:09:42 [31;1mD:/project/shoping/server/service/member/bootstrap.go:224 [35;1mrecord not found
+[0m[33m[82.379ms] [34;1m[rows:0][0m SELECT * FROM `sys_base_menus` WHERE name = 'pointTransaction' AND `sys_base_menus`.`deleted_at` IS NULL ORDER BY `sys_base_menus`.`id` LIMIT 1
+
+2026/04/19 15:09:43 [31;1mD:/project/shoping/server/service/member/bootstrap.go:224 [35;1mrecord not found
+[0m[33m[76.391ms] [34;1m[rows:0][0m SELECT * FROM `sys_base_menus` WHERE name = 'pointProduct' AND `sys_base_menus`.`deleted_at` IS NULL ORDER BY `sys_base_menus`.`id` LIMIT 1
+
+2026/04/19 15:09:43 [31;1mD:/project/shoping/server/service/member/bootstrap.go:204 [35;1mrecord not found
+[0m[33m[78.192ms] [34;1m[rows:0][0m SELECT * FROM `sys_base_menu_btns` WHERE (sys_base_menu_id = 17 AND name = 'add') AND `sys_base_menu_btns`.`deleted_at` IS NULL ORDER BY `sys_base_menu_btns`.`id` LIMIT 1
+
+2026/04/19 15:09:43 [31;1mD:/project/shoping/server/service/member/bootstrap.go:204 [35;1mrecord not found
+[0m[33m[75.750ms] [34;1m[rows:0][0m SELECT * FROM `sys_base_menu_btns` WHERE (sys_base_menu_id = 17 AND name = 'edit') AND `sys_base_menu_btns`.`deleted_at` IS NULL ORDER BY `sys_base_menu_btns`.`id` LIMIT 1
+
+2026/04/19 15:09:43 [31;1mD:/project/shoping/server/service/member/bootstrap.go:204 [35;1mrecord not found
+[0m[33m[74.141ms] [34;1m[rows:0][0m SELECT * FROM `sys_base_menu_btns` WHERE (sys_base_menu_id = 17 AND name = 'status') AND `sys_base_menu_btns`.`deleted_at` IS NULL ORDER BY `sys_base_menu_btns`.`id` LIMIT 1
+
+2026/04/19 15:09:44 [31;1mD:/project/shoping/server/service/member/bootstrap.go:204 [35;1mrecord not found
+[0m[33m[77.250ms] [34;1m[rows:0][0m SELECT * FROM `sys_base_menu_btns` WHERE (sys_base_menu_id = 17 AND name = 'delete') AND `sys_base_menu_btns`.`deleted_at` IS NULL ORDER BY `sys_base_menu_btns`.`id` LIMIT 1
+
+2026/04/19 15:09:44 [31;1mD:/project/shoping/server/service/member/bootstrap.go:224 [35;1mrecord not found
+[0m[33m[80.006ms] [34;1m[rows:0][0m SELECT * FROM `sys_base_menus` WHERE name = 'redemptionOrder' AND `sys_base_menus`.`deleted_at` IS NULL ORDER BY `sys_base_menus`.`id` LIMIT 1
+
+2026/04/19 15:09:44 [31;1mD:/project/shoping/server/service/member/bootstrap.go:204 [35;1mrecord not found
+[0m[33m[77.743ms] [34;1m[rows:0][0m SELECT * FROM `sys_base_menu_btns` WHERE (sys_base_menu_id = 18 AND name = 'add') AND `sys_base_menu_btns`.`deleted_at` IS NULL ORDER BY `sys_base_menu_btns`.`id` LIMIT 1
+
+2026/04/19 15:09:44 [31;1mD:/project/shoping/server/service/member/bootstrap.go:204 [35;1mrecord not found
+[0m[33m[76.458ms] [34;1m[rows:0][0m SELECT * FROM `sys_base_menu_btns` WHERE (sys_base_menu_id = 18 AND name = 'info') AND `sys_base_menu_btns`.`deleted_at` IS NULL ORDER BY `sys_base_menu_btns`.`id` LIMIT 1
+
+2026/04/19 15:09:44 [31;1mD:/project/shoping/server/service/member/bootstrap.go:204 [35;1mrecord not found
+[0m[33m[75.748ms] [34;1m[rows:0][0m SELECT * FROM `sys_base_menu_btns` WHERE (sys_base_menu_id = 18 AND name = 'complete') AND `sys_base_menu_btns`.`deleted_at` IS NULL ORDER BY `sys_base_menu_btns`.`id` LIMIT 1
+
+2026/04/19 15:09:44 [31;1mD:/project/shoping/server/service/member/bootstrap.go:204 [35;1mrecord not found
+[0m[33m[76.356ms] [34;1m[rows:0][0m SELECT * FROM `sys_base_menu_btns` WHERE (sys_base_menu_id = 18 AND name = 'cancel') AND `sys_base_menu_btns`.`deleted_at` IS NULL ORDER BY `sys_base_menu_btns`.`id` LIMIT 1
+
+2026/04/19 15:09:45 [31;1mD:/project/shoping/server/service/member/bootstrap.go:364 [35;1mrecord not found
+[0m[33m[77.728ms] [34;1m[rows:0][0m SELECT * FROM `casbin_rule` WHERE ptype = 'p' AND v0 = '888' AND v1 = '/member/createMember' AND v2 = 'POST' ORDER BY `casbin_rule`.`id` LIMIT 1
+
+2026/04/19 15:09:46 [31;1mD:/project/shoping/server/service/member/bootstrap.go:364 [35;1mrecord not found
+[0m[33m[72.989ms] [34;1m[rows:0][0m SELECT * FROM `casbin_rule` WHERE ptype = 'p' AND v0 = '888' AND v1 = '/member/deleteMember' AND v2 = 'DELETE' ORDER BY `casbin_rule`.`id` LIMIT 1
+
+2026/04/19 15:09:46 [31;1mD:/project/shoping/server/service/member/bootstrap.go:364 [35;1mrecord not found
+[0m[33m[76.119ms] [34;1m[rows:0][0m SELECT * FROM `casbin_rule` WHERE ptype = 'p' AND v0 = '888' AND v1 = '/member/updateMember' AND v2 = 'PUT' ORDER BY `casbin_rule`.`id` LIMIT 1
+
+2026/04/19 15:09:46 [31;1mD:/project/shoping/server/service/member/bootstrap.go:364 [35;1mrecord not found
+[0m[33m[77.796ms] [34;1m[rows:0][0m SELECT * FROM `casbin_rule` WHERE ptype = 'p' AND v0 = '888' AND v1 = '/member/findMember' AND v2 = 'GET' ORDER BY `casbin_rule`.`id` LIMIT 1
+
+2026/04/19 15:09:46 [31;1mD:/project/shoping/server/service/member/bootstrap.go:364 [35;1mrecord not found
+[0m[33m[78.164ms] [34;1m[rows:0][0m SELECT * FROM `casbin_rule` WHERE ptype = 'p' AND v0 = '888' AND v1 = '/member/getMemberList' AND v2 = 'GET' ORDER BY `casbin_rule`.`id` LIMIT 1
+
+2026/04/19 15:09:46 [31;1mD:/project/shoping/server/service/member/bootstrap.go:364 [35;1mrecord not found
+[0m[33m[76.827ms] [34;1m[rows:0][0m SELECT * FROM `casbin_rule` WHERE ptype = 'p' AND v0 = '888' AND v1 = '/member/updateMemberStatus' AND v2 = 'PUT' ORDER BY `casbin_rule`.`id` LIMIT 1
+
+2026/04/19 15:09:46 [31;1mD:/project/shoping/server/service/member/bootstrap.go:364 [35;1mrecord not found
+[0m[33m[80.342ms] [34;1m[rows:0][0m SELECT * FROM `casbin_rule` WHERE ptype = 'p' AND v0 = '888' AND v1 = '/member/getMemberPointAccount' AND v2 = 'GET' ORDER BY `casbin_rule`.`id` LIMIT 1
+
+2026/04/19 15:09:46 [31;1mD:/project/shoping/server/service/member/bootstrap.go:364 [35;1mrecord not found
+[0m[33m[77.762ms] [34;1m[rows:0][0m SELECT * FROM `casbin_rule` WHERE ptype = 'p' AND v0 = '888' AND v1 = '/member/getMemberOptions' AND v2 = 'GET' ORDER BY `casbin_rule`.`id` LIMIT 1
+
+2026/04/19 15:09:47 [31;1mD:/project/shoping/server/service/member/bootstrap.go:364 [35;1mrecord not found
+[0m[33m[76.539ms] [34;1m[rows:0][0m SELECT * FROM `casbin_rule` WHERE ptype = 'p' AND v0 = '888' AND v1 = '/pointAccount/findPointAccount' AND v2 = 'GET' ORDER BY `casbin_rule`.`id` LIMIT 1
+
+2026/04/19 15:09:47 [31;1mD:/project/shoping/server/service/member/bootstrap.go:364 [35;1mrecord not found
+[0m[33m[77.662ms] [34;1m[rows:0][0m SELECT * FROM `casbin_rule` WHERE ptype = 'p' AND v0 = '888' AND v1 = '/pointAccount/getPointAccountList' AND v2 = 'GET' ORDER BY `casbin_rule`.`id` LIMIT 1
+
+2026/04/19 15:09:47 [31;1mD:/project/shoping/server/service/member/bootstrap.go:364 [35;1mrecord not found
+[0m[33m[84.076ms] [34;1m[rows:0][0m SELECT * FROM `casbin_rule` WHERE ptype = 'p' AND v0 = '888' AND v1 = '/pointAccount/manualAddPoints' AND v2 = 'POST' ORDER BY `casbin_rule`.`id` LIMIT 1
+
+2026/04/19 15:09:47 [31;1mD:/project/shoping/server/service/member/bootstrap.go:364 [35;1mrecord not found
+[0m[33m[79.914ms] [34;1m[rows:0][0m SELECT * FROM `casbin_rule` WHERE ptype = 'p' AND v0 = '888' AND v1 = '/pointAccount/manualSubPoints' AND v2 = 'POST' ORDER BY `casbin_rule`.`id` LIMIT 1
+
+2026/04/19 15:09:47 [31;1mD:/project/shoping/server/service/member/bootstrap.go:364 [35;1mrecord not found
+[0m[33m[76.296ms] [34;1m[rows:0][0m SELECT * FROM `casbin_rule` WHERE ptype = 'p' AND v0 = '888' AND v1 = '/pointTransaction/getPointTransactionList' AND v2 = 'GET' ORDER BY `casbin_rule`.`id` LIMIT 1
+
+2026/04/19 15:09:47 [31;1mD:/project/shoping/server/service/member/bootstrap.go:364 [35;1mrecord not found
+[0m[33m[75.525ms] [34;1m[rows:0][0m SELECT * FROM `casbin_rule` WHERE ptype = 'p' AND v0 = '888' AND v1 = '/pointProduct/createPointProduct' AND v2 = 'POST' ORDER BY `casbin_rule`.`id` LIMIT 1
+
+2026/04/19 15:09:48 [31;1mD:/project/shoping/server/service/member/bootstrap.go:364 [35;1mrecord not found
+[0m[33m[76.852ms] [34;1m[rows:0][0m SELECT * FROM `casbin_rule` WHERE ptype = 'p' AND v0 = '888' AND v1 = '/pointProduct/deletePointProduct' AND v2 = 'DELETE' ORDER BY `casbin_rule`.`id` LIMIT 1
+
+2026/04/19 15:09:48 [31;1mD:/project/shoping/server/service/member/bootstrap.go:364 [35;1mrecord not found
+[0m[33m[77.824ms] [34;1m[rows:0][0m SELECT * FROM `casbin_rule` WHERE ptype = 'p' AND v0 = '888' AND v1 = '/pointProduct/updatePointProduct' AND v2 = 'PUT' ORDER BY `casbin_rule`.`id` LIMIT 1
+
+2026/04/19 15:09:48 [31;1mD:/project/shoping/server/service/member/bootstrap.go:364 [35;1mrecord not found
+[0m[33m[78.874ms] [34;1m[rows:0][0m SELECT * FROM `casbin_rule` WHERE ptype = 'p' AND v0 = '888' AND v1 = '/pointProduct/findPointProduct' AND v2 = 'GET' ORDER BY `casbin_rule`.`id` LIMIT 1
+
+2026/04/19 15:09:48 [31;1mD:/project/shoping/server/service/member/bootstrap.go:364 [35;1mrecord not found
+[0m[33m[73.848ms] [34;1m[rows:0][0m SELECT * FROM `casbin_rule` WHERE ptype = 'p' AND v0 = '888' AND v1 = '/pointProduct/getPointProductList' AND v2 = 'GET' ORDER BY `casbin_rule`.`id` LIMIT 1
+
+2026/04/19 15:09:48 [31;1mD:/project/shoping/server/service/member/bootstrap.go:364 [35;1mrecord not found
+[0m[33m[84.565ms] [34;1m[rows:0][0m SELECT * FROM `casbin_rule` WHERE ptype = 'p' AND v0 = '888' AND v1 = '/pointProduct/updatePointProductStatus' AND v2 = 'PUT' ORDER BY `casbin_rule`.`id` LIMIT 1
+
+2026/04/19 15:09:48 [31;1mD:/project/shoping/server/service/member/bootstrap.go:364 [35;1mrecord not found
+[0m[33m[78.257ms] [34;1m[rows:0][0m SELECT * FROM `casbin_rule` WHERE ptype = 'p' AND v0 = '888' AND v1 = '/pointProduct/getPointProductOptions' AND v2 = 'GET' ORDER BY `casbin_rule`.`id` LIMIT 1
+
+2026/04/19 15:09:49 [31;1mD:/project/shoping/server/service/member/bootstrap.go:364 [35;1mrecord not found
+[0m[33m[81.371ms] [34;1m[rows:0][0m SELECT * FROM `casbin_rule` WHERE ptype = 'p' AND v0 = '888' AND v1 = '/redemptionOrder/createRedemptionOrder' AND v2 = 'POST' ORDER BY `casbin_rule`.`id` LIMIT 1
+
+2026/04/19 15:09:49 [31;1mD:/project/shoping/server/service/member/bootstrap.go:364 [35;1mrecord not found
+[0m[33m[78.499ms] [34;1m[rows:0][0m SELECT * FROM `casbin_rule` WHERE ptype = 'p' AND v0 = '888' AND v1 = '/redemptionOrder/findRedemptionOrder' AND v2 = 'GET' ORDER BY `casbin_rule`.`id` LIMIT 1
+
+2026/04/19 15:09:49 [31;1mD:/project/shoping/server/service/member/bootstrap.go:364 [35;1mrecord not found
+[0m[33m[76.531ms] [34;1m[rows:0][0m SELECT * FROM `casbin_rule` WHERE ptype = 'p' AND v0 = '888' AND v1 = '/redemptionOrder/getRedemptionOrderList' AND v2 = 'GET' ORDER BY `casbin_rule`.`id` LIMIT 1
+
+2026/04/19 15:09:49 [31;1mD:/project/shoping/server/service/member/bootstrap.go:364 [35;1mrecord not found
+[0m[33m[77.136ms] [34;1m[rows:0][0m SELECT * FROM `casbin_rule` WHERE ptype = 'p' AND v0 = '888' AND v1 = '/redemptionOrder/completeRedemptionOrder' AND v2 = 'POST' ORDER BY `casbin_rule`.`id` LIMIT 1
+
+2026/04/19 15:09:49 [31;1mD:/project/shoping/server/service/member/bootstrap.go:364 [35;1mrecord not found
+[0m[33m[77.937ms] [34;1m[rows:0][0m SELECT * FROM `casbin_rule` WHERE ptype = 'p' AND v0 = '888' AND v1 = '/redemptionOrder/cancelRedemptionOrder' AND v2 = 'POST' ORDER BY `casbin_rule`.`id` LIMIT 1
+
+2026/04/19 15:10:00 [32mD:/project/shoping/server/service/member/bootstrap_test.go:176 [33mSLOW SQL >= 200ms
+[0m[31;1m[206.598ms] [33m[rows:1][35m SELECT * FROM `sys_base_menus` WHERE name = 'medicalMember' AND `sys_base_menus`.`deleted_at` IS NULL ORDER BY `sys_base_menus`.`id` LIMIT 1[0m
+
+2026/04/19 15:10:01 [32mD:/project/shoping/server/service/member/bootstrap_test.go:205 [33mSLOW SQL >= 200ms
+[0m[31;1m[225.777ms] [33m[rows:1][35m SELECT count(*) FROM `sys_authority_btns` WHERE authority_id = 888 AND sys_menu_id = 14 AND sys_base_menu_btn_id = 32[0m
+--- PASS: TestBootstrapSeedsMemberMenusButtonsAndAuthorityGrants (44.81s)
+=== RUN   TestMemberServiceCreateMemberCreatesAccount
+--- PASS: TestMemberServiceCreateMemberCreatesAccount (11.36s)
+=== RUN   TestPointAccountServiceGetByMemberIDRebuildsMissingAccount
+
+2026/04/19 15:10:27 [31;1mD:/project/shoping/server/service/member/common.go:95 [35;1mrecord not found
+[0m[33m[75.199ms] [34;1m[rows:0][0m SELECT * FROM `mm_point_accounts` WHERE member_id = 1 AND `mm_point_accounts`.`deleted_at` IS NULL ORDER BY `mm_point_accounts`.`id` LIMIT 1
+--- PASS: TestPointAccountServiceGetByMemberIDRebuildsMissingAccount (11.36s)
+=== RUN   TestPointAccountServiceManualAdjustWritesTransactions
+--- PASS: TestPointAccountServiceManualAdjustWritesTransactions (11.98s)
+=== RUN   TestRedemptionOrderServiceCreateCancelAndComplete
+--- PASS: TestRedemptionOrderServiceCreateCancelAndComplete (14.22s)
+=== RUN   TestMemberServiceDeleteMemberRejectsPointHistory
+--- PASS: TestMemberServiceDeleteMemberRejectsPointHistory (13.82s)
+=== RUN   TestRedemptionOrderServiceCreateRedemptionOrderRejectsDisabledMemberAndInsufficientStock
+--- PASS: TestRedemptionOrderServiceCreateRedemptionOrderRejectsDisabledMemberAndInsufficientStock (12.81s)
+=== RUN   TestMigrateLegacyMemberData
+--- PASS: TestMigrateLegacyMemberData (21.77s)
+PASS
+ok  	github.com/flipped-aurora/gin-vue-admin/server/service/member	142.348s

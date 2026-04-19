@@ -24,7 +24,7 @@
 
     <div class="gva-table-box">
       <div class="gva-btn-list">
-        <el-button type="primary" icon="plus" @click="openCreateDialog">新建兑换订单</el-button>
+        <el-button v-if="btnAuth.add" type="primary" icon="plus" @click="openCreateDialog">新建兑换订单</el-button>
       </div>
 
       <el-table :data="tableData" row-key="id">
@@ -58,11 +58,11 @@
           </template>
         </el-table-column>
         <el-table-column align="left" label="备注" min-width="180" prop="remark" show-overflow-tooltip />
-        <el-table-column align="left" label="操作" min-width="240" fixed="right">
+        <el-table-column v-if="showActionColumn" align="left" label="操作" min-width="240" fixed="right">
           <template #default="scope">
-            <el-button link type="primary" icon="view" @click="openDetailDialog(scope.row)">详情</el-button>
+            <el-button v-if="btnAuth.info" link type="primary" icon="view" @click="openDetailDialog(scope.row)">详情</el-button>
             <el-button
-              v-if="scope.row.status === 1"
+              v-if="btnAuth.complete && scope.row.status === 1"
               link
               type="success"
               icon="select"
@@ -71,7 +71,7 @@
               完成
             </el-button>
             <el-button
-              v-if="scope.row.status === 1"
+              v-if="btnAuth.cancel && scope.row.status === 1"
               link
               type="warning"
               icon="close-bold"
@@ -97,8 +97,8 @@
     </div>
 
     <el-dialog v-model="createDialogVisible" title="新建兑换订单" width="620px">
-      <el-form label-width="100px" :model="createForm">
-        <el-form-item label="选择会员">
+      <el-form ref="createFormRef" label-width="100px" :model="createForm" :rules="rules">
+        <el-form-item label="选择会员" prop="memberId">
           <el-select
             v-model="createForm.memberId"
             clearable
@@ -117,7 +117,7 @@
             />
           </el-select>
         </el-form-item>
-        <el-form-item label="选择商品">
+        <el-form-item label="选择商品" prop="productId">
           <el-select
             v-model="createForm.productId"
             clearable
@@ -143,16 +143,16 @@
             <div>商品分类：{{ selectedProduct.category || '-' }}</div>
           </div>
         </el-form-item>
-        <el-form-item label="兑换数量">
+        <el-form-item label="兑换数量" prop="quantity">
           <el-input-number v-model="createForm.quantity" :min="1" style="width: 100%" />
         </el-form-item>
-        <el-form-item label="收货人">
+        <el-form-item label="收货人" prop="receiverName">
           <el-input v-model="createForm.receiverName" clearable />
         </el-form-item>
-        <el-form-item label="联系电话">
+        <el-form-item label="联系电话" prop="receiverPhone">
           <el-input v-model="createForm.receiverPhone" clearable />
         </el-form-item>
-        <el-form-item label="备注">
+        <el-form-item label="备注" prop="remark">
           <el-input v-model="createForm.remark" :rows="3" type="textarea" />
         </el-form-item>
       </el-form>
@@ -215,9 +215,10 @@
     getPointProductOptions,
     getRedemptionOrderList
   } from '@/api/member'
+  import { useBtnAuth } from '@/utils/btnAuth'
   import { formatDate } from '@/utils/format'
   import { ElMessage, ElMessageBox } from 'element-plus'
-  import { computed, ref } from 'vue'
+  import { computed, nextTick, ref } from 'vue'
 
   defineOptions({
     name: 'RedemptionOrderPage'
@@ -239,6 +240,8 @@
   const pageSize = ref(10)
   const total = ref(0)
 
+  const createFormRef = ref()
+  const btnAuth = useBtnAuth()
   const createDialogVisible = ref(false)
   const detailDialogVisible = ref(false)
   const createForm = ref({
@@ -254,6 +257,40 @@
   const productOptions = ref([])
 
   const selectedProduct = computed(() => productOptions.value.find((item) => item.id === createForm.value.productId))
+  const showActionColumn = computed(() => Boolean(btnAuth.info || btnAuth.complete || btnAuth.cancel))
+  const phonePattern = /^1([38][0-9]|4[014-9]|[59][0-35-9]|6[2567]|7[0-8])\d{8}$/
+  const trimmedRequired = (message) => ({
+    validator: (_, value, callback) => {
+      if (typeof value === 'string' ? value.trim() : value) {
+        callback()
+        return
+      }
+      callback(new Error(message))
+    },
+    trigger: 'blur'
+  })
+  const quantityValidator = (_, value, callback) => {
+    if (typeof value !== 'number' || value <= 0) {
+      callback(new Error('兑换数量必须大于 0'))
+      return
+    }
+    if (selectedProduct.value && value > selectedProduct.value.stock) {
+      callback(new Error('兑换数量不能超过当前库存'))
+      return
+    }
+    callback()
+  }
+  const rules = {
+    memberId: [{ required: true, message: '请选择会员', trigger: 'change' }],
+    productId: [{ required: true, message: '请选择商品', trigger: 'change' }],
+    quantity: [{ validator: quantityValidator, trigger: 'change' }],
+    receiverName: [trimmedRequired('请输入收货人')],
+    receiverPhone: [
+      trimmedRequired('请输入联系电话'),
+      { pattern: phonePattern, message: '请输入合法手机号', trigger: 'blur' }
+    ],
+    remark: [{ max: 200, message: '备注不能超过 200 个字符', trigger: 'blur' }]
+  }
 
   const statusLabel = (value) => {
     const item = statusOptions.find((option) => option.value === value)
@@ -336,6 +373,8 @@
     }
     await Promise.all([loadMemberOptions(), loadProductOptions()])
     createDialogVisible.value = true
+    await nextTick()
+    createFormRef.value?.clearValidate()
   }
 
   const closeCreateDialog = () => {
@@ -348,9 +387,18 @@
       receiverPhone: '',
       remark: ''
     }
+    createFormRef.value?.clearValidate()
   }
 
   const submitCreate = async () => {
+    if (!createFormRef.value) {
+      return
+    }
+    try {
+      await createFormRef.value.validate()
+    } catch {
+      return
+    }
     const res = await createRedemptionOrder(createForm.value)
     if (res.code === 0) {
       ElMessage.success('兑换订单创建成功')

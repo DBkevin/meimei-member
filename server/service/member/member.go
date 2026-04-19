@@ -40,16 +40,14 @@ func (s *MemberService) DeleteMember(id uint) error {
 		if err := tx.Model(&memberModel.PointTransaction{}).Where("member_id = ?", id).Count(&transactionCount).Error; err != nil {
 			return err
 		}
-		if transactionCount > 0 {
-			return errors.New("会员已有积分流水，无法删除")
-		}
 
 		var orderCount int64
 		if err := tx.Model(&memberModel.RedemptionOrder{}).Where("member_id = ?", id).Count(&orderCount).Error; err != nil {
 			return err
 		}
-		if orderCount > 0 {
-			return errors.New("会员已有兑换订单，无法删除")
+
+		if transactionCount > 0 || orderCount > 0 {
+			return errors.New("该会员已有积分记录或兑换订单，不允许删除，请改为禁用。")
 		}
 
 		if err := tx.Where("member_id = ?", id).Delete(&memberModel.PointAccount{}).Error; err != nil {

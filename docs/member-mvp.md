@@ -23,11 +23,11 @@
 
 服务启动时会通过 `server/initialize/gorm_biz.go` 自动迁移以下表：
 
-- `member_members`
-- `member_point_accounts`
-- `member_point_logs`
-- `member_point_goods`
-- `member_exchange_orders`
+- `mm_members`
+- `mm_point_accounts`
+- `mm_point_transactions`
+- `mm_point_products`
+- `mm_redemption_orders`
 
 ## 启动期自动注册
 
@@ -36,9 +36,19 @@
 - 业务 API 到 `sys_apis`
 - 后台菜单到 `sys_base_menus`
 - 超级管理员角色 `888` 的菜单关联
+- 超级管理员角色 `888` 的按钮级权限
 - 超级管理员角色 `888` 的 casbin API 权限
 
 如果当前数据库已经初始化过 GVA，只需要重新启动后端，新的会员积分菜单就会自动出现到超级管理员账号下。
+
+如果数据库里还保留旧版会员积分表 `member_*`，可以执行下面的命令迁移历史数据到新 `mm_*` 表：
+
+```bash
+cd server
+go run ./cmd/member_migrate -c config.local.yaml
+```
+
+迁移命令只会复制旧表数据到新表，并补齐会员模块 API / 菜单 / 按钮权限，不会删除旧表。
 
 ## 运行方式
 

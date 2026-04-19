@@ -25,7 +25,7 @@
 
     <div class="gva-table-box">
       <div class="gva-btn-list">
-        <el-button type="primary" icon="plus" @click="openCreateDialog">新增会员</el-button>
+        <el-button v-if="btnAuth.add" type="primary" icon="plus" @click="openCreateDialog">新增会员</el-button>
       </div>
 
       <el-table :data="tableData" row-key="id">
@@ -56,18 +56,19 @@
           </template>
         </el-table-column>
         <el-table-column align="left" label="备注" min-width="180" prop="remark" show-overflow-tooltip />
-        <el-table-column align="left" label="操作" min-width="280" fixed="right">
+        <el-table-column v-if="showActionColumn" align="left" label="操作" min-width="280" fixed="right">
           <template #default="scope">
-            <el-button link type="primary" icon="edit" @click="openEditDialog(scope.row)">编辑</el-button>
+            <el-button v-if="btnAuth.edit" link type="primary" icon="edit" @click="openEditDialog(scope.row)">编辑</el-button>
             <el-button
+              v-if="btnAuth.status"
               link
               :type="scope.row.status === 1 ? 'warning' : 'success'"
               @click="handleStatusChange(scope.row)"
             >
               {{ scope.row.status === 1 ? '禁用' : '启用' }}
             </el-button>
-            <el-button link type="primary" icon="tickets" @click="showAccount(scope.row)">积分账户</el-button>
-            <el-button link type="danger" icon="delete" @click="handleDelete(scope.row)">删除</el-button>
+            <el-button v-if="btnAuth.account" link type="primary" icon="tickets" @click="showAccount(scope.row)">积分账户</el-button>
+            <el-button v-if="btnAuth.delete" link type="danger" icon="delete" @click="handleDelete(scope.row)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -86,15 +87,15 @@
     </div>
 
     <el-dialog v-model="dialogVisible" :title="dialogType === 'create' ? '新增会员' : '编辑会员'" width="720px">
-      <el-form label-width="100px" :model="formData">
+      <el-form ref="formRef" label-width="100px" :model="formData" :rules="rules">
         <el-row :gutter="16">
           <el-col :span="12">
-            <el-form-item label="会员姓名">
+            <el-form-item label="会员姓名" prop="name">
               <el-input v-model="formData.name" clearable />
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="手机号">
+            <el-form-item label="手机号" prop="phone">
               <el-input v-model="formData.phone" clearable />
             </el-form-item>
           </el-col>
@@ -122,21 +123,21 @@
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="会员等级">
+            <el-form-item label="会员等级" prop="level">
               <el-select v-model="formData.level" style="width: 100%">
                 <el-option v-for="item in levelOptions" :key="item.value" :label="item.label" :value="item.value" />
               </el-select>
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="状态">
+            <el-form-item label="状态" prop="status">
               <el-select v-model="formData.status" style="width: 100%">
                 <el-option v-for="item in statusOptions" :key="item.value" :label="item.label" :value="item.value" />
               </el-select>
             </el-form-item>
           </el-col>
           <el-col :span="24">
-            <el-form-item label="备注">
+            <el-form-item label="备注" prop="remark">
               <el-input v-model="formData.remark" :rows="4" type="textarea" />
             </el-form-item>
           </el-col>
@@ -183,7 +184,8 @@
     updateMember,
     updateMemberStatus
   } from '@/api/member'
-  import { ref } from 'vue'
+  import { useBtnAuth } from '@/utils/btnAuth'
+  import { computed, nextTick, ref } from 'vue'
   import { ElMessage, ElMessageBox } from 'element-plus'
   import { formatDate } from '@/utils/format'
 
@@ -231,12 +233,37 @@
   const pageSize = ref(10)
   const total = ref(0)
 
+  const formRef = ref()
+  const btnAuth = useBtnAuth()
   const dialogVisible = ref(false)
   const dialogType = ref('create')
   const formData = ref(defaultForm())
 
   const accountDialogVisible = ref(false)
   const currentAccount = ref({})
+  const showActionColumn = computed(() => Boolean(btnAuth.edit || btnAuth.status || btnAuth.account || btnAuth.delete))
+
+  const phonePattern = /^1([38][0-9]|4[014-9]|[59][0-35-9]|6[2567]|7[0-8])\d{8}$/
+  const trimmedRequired = (message) => ({
+    validator: (_, value, callback) => {
+      if (typeof value === 'string' ? value.trim() : value) {
+        callback()
+        return
+      }
+      callback(new Error(message))
+    },
+    trigger: 'blur'
+  })
+  const rules = {
+    name: [trimmedRequired('请输入会员姓名')],
+    phone: [
+      trimmedRequired('请输入手机号'),
+      { pattern: phonePattern, message: '请输入合法手机号', trigger: 'blur' }
+    ],
+    level: [{ required: true, message: '请选择会员等级', trigger: 'change' }],
+    status: [{ required: true, message: '请选择会员状态', trigger: 'change' }],
+    remark: [{ max: 200, message: '备注不能超过 200 个字符', trigger: 'blur' }]
+  }
 
   const genderLabel = (value) => {
     const item = genderOptions.find((option) => option.value === value)
@@ -278,10 +305,12 @@
     getTableData()
   }
 
-  const openCreateDialog = () => {
+  const openCreateDialog = async () => {
     dialogType.value = 'create'
     formData.value = defaultForm()
     dialogVisible.value = true
+    await nextTick()
+    formRef.value?.clearValidate()
   }
 
   const openEditDialog = async (row) => {
@@ -294,15 +323,26 @@
         birthday: res.data.member?.birthday ? res.data.member.birthday.slice(0, 10) : ''
       }
       dialogVisible.value = true
+      await nextTick()
+      formRef.value?.clearValidate()
     }
   }
 
   const closeDialog = () => {
     dialogVisible.value = false
     formData.value = defaultForm()
+    formRef.value?.clearValidate()
   }
 
   const submitForm = async () => {
+    if (!formRef.value) {
+      return
+    }
+    try {
+      await formRef.value.validate()
+    } catch {
+      return
+    }
     const action = dialogType.value === 'create' ? createMember : updateMember
     const res = await action(formData.value)
     if (res.code === 0) {

@@ -24,7 +24,7 @@ func (s *PointProductService) DeletePointProduct(id uint) error {
 		return err
 	}
 	if count > 0 {
-		return errors.New("商品已有兑换订单，无法删除")
+		return errors.New("该商品已有兑换订单，不允许删除，请改为下架。")
 	}
 	return bizDB().Delete(&memberModel.PointProduct{}, "id = ?", id).Error
 }

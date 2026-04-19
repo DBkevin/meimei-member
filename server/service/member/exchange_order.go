@@ -26,7 +26,7 @@ func (s *RedemptionOrderService) CreateRedemptionOrder(req memberReq.CreateRedem
 			return err
 		}
 		if member.Status != memberModel.MemberStatusEnabled {
-			return errors.New("会员已禁用，无法兑换")
+			return errors.New("该会员已禁用，不能创建兑换订单。")
 		}
 
 		var product memberModel.PointProduct
@@ -38,10 +38,13 @@ func (s *RedemptionOrderService) CreateRedemptionOrder(req memberReq.CreateRedem
 			return err
 		}
 		if product.Status != memberModel.PointProductStatusOnSale {
-			return errors.New("商品未上架，无法兑换")
+			return errors.New("商品已下架，无法兑换")
+		}
+		if product.PointsPrice <= 0 {
+			return errors.New("商品积分价格异常，无法兑换")
 		}
 		if product.Stock < req.Quantity {
-			return errors.New("商品库存不足")
+			return errors.New("商品库存不足，无法兑换")
 		}
 
 		totalPoints := product.PointsPrice * req.Quantity

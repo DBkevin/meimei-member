@@ -1,0 +1,12 @@
+{
+  "pid": 23468,
+  "startedAt": "2026-04-19T14:21:24+08:00",
+  "logPath": "D:\\project\\shoping\\.tmp\\mcp\\mcp.log",
+  "configPath": "D:\\project\\shoping\\server\\cmd\\mcp\\config.yaml",
+  "workDir": "D:\\project\\shoping\\server",
+  "command": "D:\\project\\shoping\\.tmp\\mcp\\gva-mcp-standalone.exe",
+  "args": [
+    "-config",
+    "D:\\project\\shoping\\server\\cmd\\mcp\\config.yaml"
+  ]
+}

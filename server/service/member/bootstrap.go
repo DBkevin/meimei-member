@@ -25,6 +25,9 @@ func Bootstrap() error {
 		if err := ensureSuperAdminMenus(tx, menus); err != nil {
 			return err
 		}
+		if err := ensureSuperAdminAuthorityButtons(tx, menus); err != nil {
+			return err
+		}
 		return ensureSuperAdminCasbin(tx)
 	})
 }
@@ -107,12 +110,64 @@ func ensureMenus(tx *gorm.DB) ([]systemModel.SysBaseMenu, error) {
 		Sort      int
 		Title     string
 		Icon      string
+		Buttons   []systemModel.SysBaseMenuBtn
 	}{
-		{Name: "memberList", Path: "members", Component: "view/member/member/index.vue", Sort: 1, Title: "会员管理", Icon: "user"},
-		{Name: "pointAccount", Path: "point-accounts", Component: "view/member/account/index.vue", Sort: 2, Title: "积分账户", Icon: "coin"},
+		{
+			Name:      "memberList",
+			Path:      "members",
+			Component: "view/member/member/index.vue",
+			Sort:      1,
+			Title:     "会员管理",
+			Icon:      "user",
+			Buttons: []systemModel.SysBaseMenuBtn{
+				{Name: "add", Desc: "新增会员"},
+				{Name: "edit", Desc: "编辑会员"},
+				{Name: "status", Desc: "切换会员状态"},
+				{Name: "account", Desc: "查看积分账户"},
+				{Name: "delete", Desc: "删除会员"},
+			},
+		},
+		{
+			Name:      "pointAccount",
+			Path:      "point-accounts",
+			Component: "view/member/account/index.vue",
+			Sort:      2,
+			Title:     "积分账户",
+			Icon:      "coin",
+			Buttons: []systemModel.SysBaseMenuBtn{
+				{Name: "adjustAdd", Desc: "手工增加积分"},
+				{Name: "adjustSub", Desc: "手工扣减积分"},
+			},
+		},
 		{Name: "pointTransaction", Path: "point-transactions", Component: "view/member/log/index.vue", Sort: 3, Title: "积分流水", Icon: "tickets"},
-		{Name: "pointProduct", Path: "point-products", Component: "view/member/goods/index.vue", Sort: 4, Title: "积分商品", Icon: "goods-filled"},
-		{Name: "redemptionOrder", Path: "redemption-orders", Component: "view/member/order/index.vue", Sort: 5, Title: "兑换订单", Icon: "memo"},
+		{
+			Name:      "pointProduct",
+			Path:      "point-products",
+			Component: "view/member/goods/index.vue",
+			Sort:      4,
+			Title:     "积分商品",
+			Icon:      "goods-filled",
+			Buttons: []systemModel.SysBaseMenuBtn{
+				{Name: "add", Desc: "新增积分商品"},
+				{Name: "edit", Desc: "编辑积分商品"},
+				{Name: "status", Desc: "上下架积分商品"},
+				{Name: "delete", Desc: "删除积分商品"},
+			},
+		},
+		{
+			Name:      "redemptionOrder",
+			Path:      "redemption-orders",
+			Component: "view/member/order/index.vue",
+			Sort:      5,
+			Title:     "兑换订单",
+			Icon:      "memo",
+			Buttons: []systemModel.SysBaseMenuBtn{
+				{Name: "add", Desc: "新建兑换订单"},
+				{Name: "info", Desc: "查看订单详情"},
+				{Name: "complete", Desc: "完成兑换订单"},
+				{Name: "cancel", Desc: "取消兑换订单"},
+			},
+		},
 	}
 
 	result := []systemModel.SysBaseMenu{parent}
@@ -131,9 +186,37 @@ func ensureMenus(tx *gorm.DB) ([]systemModel.SysBaseMenu, error) {
 		if upsertErr != nil {
 			return nil, upsertErr
 		}
+		if upsertErr = ensureMenuButtons(tx, menu.ID, item.Buttons); upsertErr != nil {
+			return nil, upsertErr
+		}
 		result = append(result, menu)
 	}
 	return result, nil
+}
+
+func ensureMenuButtons(tx *gorm.DB, menuID uint, buttons []systemModel.SysBaseMenuBtn) error {
+	if len(buttons) == 0 {
+		return nil
+	}
+
+	for _, item := range buttons {
+		var button systemModel.SysBaseMenuBtn
+		err := tx.Where("sys_base_menu_id = ? AND name = ?", menuID, item.Name).First(&button).Error
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			item.SysBaseMenuID = menuID
+			if err = tx.Create(&item).Error; err != nil {
+				return err
+			}
+			continue
+		}
+		if err != nil {
+			return err
+		}
+		if err = tx.Model(&button).Update("desc", item.Desc).Error; err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func upsertMenu(tx *gorm.DB, name string, updates map[string]interface{}, defaults systemModel.SysBaseMenu) (systemModel.SysBaseMenu, error) {
@@ -188,6 +271,59 @@ func ensureSuperAdminMenus(tx *gorm.DB, menus []systemModel.SysBaseMenu) error {
 		return nil
 	}
 	return tx.Create(&missingRelations).Error
+}
+
+func ensureSuperAdminAuthorityButtons(tx *gorm.DB, menus []systemModel.SysBaseMenu) error {
+	const superAdminAuthorityID = 888
+
+	menuIDs := make([]uint, 0, len(menus))
+	for _, item := range menus {
+		if item.ParentId == 0 {
+			continue
+		}
+		menuIDs = append(menuIDs, item.ID)
+	}
+	if len(menuIDs) == 0 {
+		return nil
+	}
+
+	var existing []systemModel.SysAuthorityBtn
+	if err := tx.Where("authority_id = ? AND sys_menu_id IN ?", superAdminAuthorityID, menuIDs).Find(&existing).Error; err != nil {
+		return err
+	}
+	existingMap := make(map[uint]map[uint]struct{}, len(existing))
+	for _, item := range existing {
+		if existingMap[item.SysMenuID] == nil {
+			existingMap[item.SysMenuID] = make(map[uint]struct{})
+		}
+		existingMap[item.SysMenuID][item.SysBaseMenuBtnID] = struct{}{}
+	}
+
+	missing := make([]systemModel.SysAuthorityBtn, 0)
+	for _, menu := range menus {
+		if menu.ParentId == 0 {
+			continue
+		}
+		var buttons []systemModel.SysBaseMenuBtn
+		if err := tx.Where("sys_base_menu_id = ?", menu.ID).Find(&buttons).Error; err != nil {
+			return err
+		}
+		for _, button := range buttons {
+			if _, ok := existingMap[menu.ID][button.ID]; ok {
+				continue
+			}
+			missing = append(missing, systemModel.SysAuthorityBtn{
+				AuthorityId:      superAdminAuthorityID,
+				SysMenuID:        menu.ID,
+				SysBaseMenuBtnID: button.ID,
+			})
+		}
+	}
+
+	if len(missing) == 0 {
+		return nil
+	}
+	return tx.Create(&missing).Error
 }
 
 func ensureSuperAdminCasbin(tx *gorm.DB) error {

@@ -83,20 +83,75 @@ func loadMember(tx *gorm.DB, memberID uint) (memberModel.Member, error) {
 	return member, nil
 }
 
-func getOrCreateAccountForUpdate(tx *gorm.DB, memberID uint) (memberModel.PointAccount, error) {
+func loadPointAccountByMemberID(tx *gorm.DB, memberID uint, lock bool, unscoped bool) (memberModel.PointAccount, error) {
 	var account memberModel.PointAccount
-	err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where("member_id = ?", memberID).First(&account).Error
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		account = memberModel.PointAccount{MemberID: memberID}
-		if err = tx.Create(&account).Error; err != nil {
-			if retryErr := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where("member_id = ?", memberID).First(&account).Error; retryErr == nil {
-				return account, nil
-			}
-			return account, err
-		}
-		err = tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where("id = ?", account.ID).First(&account).Error
+	query := tx
+	if unscoped {
+		query = query.Unscoped()
 	}
+	if lock {
+		query = query.Clauses(clause.Locking{Strength: "UPDATE"})
+	}
+	err := query.Where("member_id = ?", memberID).First(&account).Error
 	return account, err
+}
+
+func restoreDeletedPointAccount(tx *gorm.DB, memberID uint, lock bool) (memberModel.PointAccount, error) {
+	account, err := loadPointAccountByMemberID(tx, memberID, lock, true)
+	if err != nil {
+		return account, err
+	}
+	if !account.DeletedAt.Valid {
+		return account, nil
+	}
+
+	updateResult := tx.Unscoped().
+		Model(&memberModel.PointAccount{}).
+		Where("id = ?", account.ID).
+		Updates(map[string]interface{}{"deleted_at": nil})
+	if updateResult.Error != nil {
+		return account, updateResult.Error
+	}
+	if updateResult.RowsAffected != 1 {
+		return account, errors.New("恢复积分账户失败")
+	}
+
+	return loadPointAccountByMemberID(tx, memberID, lock, false)
+}
+
+func getOrCreateAccount(tx *gorm.DB, memberID uint, lock bool) (memberModel.PointAccount, error) {
+	account, err := loadPointAccountByMemberID(tx, memberID, lock, false)
+	if err == nil {
+		return account, nil
+	}
+	if !errors.Is(err, gorm.ErrRecordNotFound) {
+		return account, err
+	}
+
+	account, err = restoreDeletedPointAccount(tx, memberID, lock)
+	if err == nil {
+		return account, nil
+	}
+	if !errors.Is(err, gorm.ErrRecordNotFound) {
+		return account, err
+	}
+
+	account = memberModel.PointAccount{MemberID: memberID}
+	if err = tx.Create(&account).Error; err != nil {
+		if restored, restoreErr := restoreDeletedPointAccount(tx, memberID, lock); restoreErr == nil {
+			return restored, nil
+		}
+		if retryAccount, retryErr := loadPointAccountByMemberID(tx, memberID, lock, false); retryErr == nil {
+			return retryAccount, nil
+		}
+		return account, err
+	}
+
+	return loadPointAccountByMemberID(tx, memberID, lock, false)
+}
+
+func getOrCreateAccountForUpdate(tx *gorm.DB, memberID uint) (memberModel.PointAccount, error) {
+	return getOrCreateAccount(tx, memberID, true)
 }
 
 func applyPointChange(tx *gorm.DB, memberID uint, action string, points int64) (pointChangeResult, error) {

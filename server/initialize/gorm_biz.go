@@ -2,7 +2,6 @@ package initialize
 
 import (
 	"github.com/flipped-aurora/gin-vue-admin/server/global"
-	"github.com/flipped-aurora/gin-vue-admin/server/model/example"
 	memberModel "github.com/flipped-aurora/gin-vue-admin/server/model/member"
 	memberService "github.com/flipped-aurora/gin-vue-admin/server/service/member"
 )

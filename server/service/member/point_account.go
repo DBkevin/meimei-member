@@ -1,7 +1,6 @@
 package member
 
 import (
-	"errors"
 	"strings"
 
 	memberModel "github.com/flipped-aurora/gin-vue-admin/server/model/member"
@@ -18,26 +17,9 @@ func (s *PointAccountService) GetPointAccountByMemberID(memberID uint) (account 
 			return loadErr
 		}
 
-		queryErr := tx.Where("member_id = ?", memberID).First(&account).Error
-		if queryErr == nil {
-			account.Member = member
-			return nil
-		}
-		if !errors.Is(queryErr, gorm.ErrRecordNotFound) {
-			return queryErr
-		}
-
-		if createErr := tx.Create(&memberModel.PointAccount{MemberID: memberID}).Error; createErr != nil {
-			queryErr = tx.Where("member_id = ?", memberID).First(&account).Error
-			if queryErr == nil {
-				account.Member = member
-				return nil
-			}
-			return createErr
-		}
-
-		if queryErr = tx.Where("member_id = ?", memberID).First(&account).Error; queryErr != nil {
-			return queryErr
+		account, loadErr = getOrCreateAccount(tx, memberID, false)
+		if loadErr != nil {
+			return loadErr
 		}
 		account.Member = member
 		return nil
