@@ -33,8 +33,8 @@ func ValidateMemberInput(input memberReq.MemberBaseInput) error {
 		return errors.New("会员等级不超过20个字符")
 	}
 
-	if input.Status != 0 && input.Status != 1 {
-		return errors.New("会员状态值无效，应为 0/1")
+	if input.Status != 1 && input.Status != 2 {
+		return errors.New("会员状态值无效，应为 1启用 / 2禁用")
 	}
 
 	return nil
@@ -58,8 +58,8 @@ func ValidatePointProductInput(input memberReq.PointProductBaseInput) error {
 		return errors.New("商品库存不能为负数")
 	}
 
-	if input.Status != 0 && input.Status != 1 {
-		return errors.New("商品状态值无效，应为 0/1")
+	if input.Status != 1 && input.Status != 2 {
+		return errors.New("商品状态值无效，应为 1上架 / 2下架")
 	}
 
 	if input.Sort < 0 || input.Sort > 1000 {
