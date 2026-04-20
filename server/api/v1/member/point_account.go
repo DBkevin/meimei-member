@@ -79,6 +79,10 @@ func (a *PointAccountApi) ManualAddPoints(c *gin.Context) {
 		commonRes.FailWithMessage(err.Error(), c)
 		return
 	}
+	if err := ValidateAdjustPointsInput(req); err != nil {
+		commonRes.FailWithMessage(err.Error(), c)
+		return
+	}
 	if err := pointAccountService.ManualAddPoints(req, utils.GetUserID(c)); err != nil {
 		global.GVA_LOG.Error("手工增加积分失败", zap.Error(err))
 		commonRes.FailWithMessage("手工增加积分失败:"+err.Error(), c)
@@ -99,6 +103,10 @@ func (a *PointAccountApi) ManualAddPoints(c *gin.Context) {
 func (a *PointAccountApi) ManualSubPoints(c *gin.Context) {
 	var req memberReq.AdjustPointsReq
 	if err := c.ShouldBindJSON(&req); err != nil {
+		commonRes.FailWithMessage(err.Error(), c)
+		return
+	}
+	if err := ValidateAdjustPointsInput(req); err != nil {
 		commonRes.FailWithMessage(err.Error(), c)
 		return
 	}

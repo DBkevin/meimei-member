@@ -44,3 +44,8 @@ web/pnpm-lock.yaml
 *.db
 *.sqlite
 *.sqlite3
+
+# Test and build output files
+*_output.txt
+*_tests.txt
+*_test.log

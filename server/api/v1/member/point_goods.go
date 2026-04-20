@@ -26,6 +26,10 @@ func (a *PointProductApi) CreatePointProduct(c *gin.Context) {
 		commonRes.FailWithMessage(err.Error(), c)
 		return
 	}
+	if err := ValidatePointProductInput(req.PointProductBaseInput); err != nil {
+		commonRes.FailWithMessage(err.Error(), c)
+		return
+	}
 	if err := pointProductService.CreatePointProduct(req); err != nil {
 		global.GVA_LOG.Error("创建积分商品失败", zap.Error(err))
 		commonRes.FailWithMessage("创建积分商品失败:"+err.Error(), c)
@@ -49,6 +53,10 @@ func (a *PointProductApi) DeletePointProduct(c *gin.Context) {
 		commonRes.FailWithMessage(err.Error(), c)
 		return
 	}
+	if err := ValidateIDInput(info.Uint()); err != nil {
+		commonRes.FailWithMessage(err.Error(), c)
+		return
+	}
 	if err := pointProductService.DeletePointProduct(info.Uint()); err != nil {
 		global.GVA_LOG.Error("删除积分商品失败", zap.Error(err))
 		commonRes.FailWithMessage("删除积分商品失败:"+err.Error(), c)
@@ -69,6 +77,14 @@ func (a *PointProductApi) DeletePointProduct(c *gin.Context) {
 func (a *PointProductApi) UpdatePointProduct(c *gin.Context) {
 	var req memberReq.UpdatePointProductReq
 	if err := c.ShouldBindJSON(&req); err != nil {
+		commonRes.FailWithMessage(err.Error(), c)
+		return
+	}
+	if err := ValidateIDInput(req.ID); err != nil {
+		commonRes.FailWithMessage(err.Error(), c)
+		return
+	}
+	if err := ValidatePointProductInput(req.PointProductBaseInput); err != nil {
 		commonRes.FailWithMessage(err.Error(), c)
 		return
 	}

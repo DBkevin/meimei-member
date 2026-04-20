@@ -27,6 +27,10 @@ func (a *RedemptionOrderApi) CreateRedemptionOrder(c *gin.Context) {
 		commonRes.FailWithMessage(err.Error(), c)
 		return
 	}
+	if err := ValidateRedemptionOrderInput(req); err != nil {
+		commonRes.FailWithMessage(err.Error(), c)
+		return
+	}
 	if err := redemptionOrderService.CreateRedemptionOrder(req, utils.GetUserID(c)); err != nil {
 		global.GVA_LOG.Error("创建兑换订单失败", zap.Error(err))
 		commonRes.FailWithMessage("创建兑换订单失败:"+err.Error(), c)
@@ -103,6 +107,10 @@ func (a *RedemptionOrderApi) CompleteRedemptionOrder(c *gin.Context) {
 		commonRes.FailWithMessage(err.Error(), c)
 		return
 	}
+	if err := ValidateIDInput(req.ID); err != nil {
+		commonRes.FailWithMessage(err.Error(), c)
+		return
+	}
 	if err := redemptionOrderService.CompleteRedemptionOrder(req, utils.GetUserID(c)); err != nil {
 		global.GVA_LOG.Error("完成兑换订单失败", zap.Error(err))
 		commonRes.FailWithMessage("完成兑换订单失败:"+err.Error(), c)
@@ -123,6 +131,10 @@ func (a *RedemptionOrderApi) CompleteRedemptionOrder(c *gin.Context) {
 func (a *RedemptionOrderApi) CancelRedemptionOrder(c *gin.Context) {
 	var req memberReq.OperateRedemptionOrderReq
 	if err := c.ShouldBindJSON(&req); err != nil {
+		commonRes.FailWithMessage(err.Error(), c)
+		return
+	}
+	if err := ValidateIDInput(req.ID); err != nil {
 		commonRes.FailWithMessage(err.Error(), c)
 		return
 	}

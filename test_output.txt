@@ -1,4 +1,0 @@
-FAIL	./service/member/... [setup failed]
-# ./service/member/...
-pattern ./service/member/...: directory prefix service\member does not contain main module or its selected dependencies
-FAIL

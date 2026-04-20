@@ -26,6 +26,10 @@ func (a *MemberApi) CreateMember(c *gin.Context) {
 		commonRes.FailWithMessage(err.Error(), c)
 		return
 	}
+	if err := ValidateMemberInput(req.MemberBaseInput); err != nil {
+		commonRes.FailWithMessage(err.Error(), c)
+		return
+	}
 	if err := memberService.CreateMember(req); err != nil {
 		global.GVA_LOG.Error("创建会员失败", zap.Error(err))
 		commonRes.FailWithMessage("创建会员失败:"+err.Error(), c)
@@ -49,6 +53,10 @@ func (a *MemberApi) DeleteMember(c *gin.Context) {
 		commonRes.FailWithMessage(err.Error(), c)
 		return
 	}
+	if err := ValidateIDInput(info.Uint()); err != nil {
+		commonRes.FailWithMessage(err.Error(), c)
+		return
+	}
 	if err := memberService.DeleteMember(info.Uint()); err != nil {
 		global.GVA_LOG.Error("删除会员失败", zap.Error(err))
 		commonRes.FailWithMessage("删除会员失败:"+err.Error(), c)
@@ -69,6 +77,14 @@ func (a *MemberApi) DeleteMember(c *gin.Context) {
 func (a *MemberApi) UpdateMember(c *gin.Context) {
 	var req memberReq.UpdateMemberReq
 	if err := c.ShouldBindJSON(&req); err != nil {
+		commonRes.FailWithMessage(err.Error(), c)
+		return
+	}
+	if err := ValidateIDInput(req.ID); err != nil {
+		commonRes.FailWithMessage(err.Error(), c)
+		return
+	}
+	if err := ValidateMemberInput(req.MemberBaseInput); err != nil {
 		commonRes.FailWithMessage(err.Error(), c)
 		return
 	}
