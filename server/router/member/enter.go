@@ -8,6 +8,7 @@ type RouterGroup struct {
 	PointTransactionRouter
 	PointProductRouter
 	RedemptionOrderRouter
+	DashboardRouter
 }
 
 var (
@@ -16,4 +17,5 @@ var (
 	pointTransactionApi = api.ApiGroupApp.MemberApiGroup.PointTransactionApi
 	pointProductApi     = api.ApiGroupApp.MemberApiGroup.PointProductApi
 	redemptionOrderApi  = api.ApiGroupApp.MemberApiGroup.RedemptionOrderApi
+	dashboardApi        = api.ApiGroupApp.MemberApiGroup.DashboardApi
 )

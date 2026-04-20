@@ -199,3 +199,35 @@ export const cancelRedemptionOrder = (data) => {
     data
   })
 }
+
+// 数据概览 API
+export const getDashboardSummary = () => {
+  return service({
+    url: '/member/dashboard/summary',
+    method: 'get'
+  })
+}
+
+export const getRecentTransactions = (params) => {
+  return service({
+    url: '/member/dashboard/recentTransactions',
+    method: 'get',
+    params
+  })
+}
+
+export const getRecentOrders = (params) => {
+  return service({
+    url: '/member/dashboard/recentOrders',
+    method: 'get',
+    params
+  })
+}
+
+export const getLowStockProducts = (params) => {
+  return service({
+    url: '/member/dashboard/lowStockProducts',
+    method: 'get',
+    params
+  })
+}

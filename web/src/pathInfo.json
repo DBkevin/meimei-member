@@ -44,6 +44,7 @@
   "/src/view/layout/tabs/index.vue": "HistoryComponent",
   "/src/view/login/index.vue": "Login",
   "/src/view/member/account/index.vue": "PointAccountPage",
+  "/src/view/member/dashboard/index.vue": "Index",
   "/src/view/member/goods/index.vue": "PointProductPage",
   "/src/view/member/log/index.vue": "PointTransactionPage",
   "/src/view/member/member/index.vue": "MemberListPage",

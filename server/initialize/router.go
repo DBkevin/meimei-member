@@ -108,6 +108,7 @@ func Routers() *gin.Engine {
 		memberRouter.InitPointTransactionRouter(PrivateGroup)               // 积分流水路由
 		memberRouter.InitPointProductRouter(PrivateGroup)                   // 积分商品路由
 		memberRouter.InitRedemptionOrderRouter(PrivateGroup)                // 兑换订单路由
+		memberRouter.InitDashboardRouter(PrivateGroup)                      // 数据概览路由
 	}
 
 	//插件路由安装

@@ -6,4 +6,5 @@ type ServiceGroup struct {
 	PointTransactionService
 	PointProductService
 	RedemptionOrderService
+	DashboardService
 }

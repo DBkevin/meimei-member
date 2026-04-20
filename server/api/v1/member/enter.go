@@ -8,6 +8,7 @@ type ApiGroup struct {
 	PointTransactionApi
 	PointProductApi
 	RedemptionOrderApi
+	DashboardApi
 }
 
 var (
@@ -16,4 +17,5 @@ var (
 	pointTransactionService = service.ServiceGroupApp.MemberServiceGroup.PointTransactionService
 	pointProductService     = service.ServiceGroupApp.MemberServiceGroup.PointProductService
 	redemptionOrderService  = service.ServiceGroupApp.MemberServiceGroup.RedemptionOrderService
+	dashboardService        = service.ServiceGroupApp.MemberServiceGroup.DashboardService
 )
